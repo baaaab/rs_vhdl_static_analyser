@@ -5,6 +5,9 @@
 
 namespace vhdl
 {
+class CEntityInstance;
+class CNetList;
+class CPortMap;
 class CEntity;
 class CParser;
 
@@ -15,14 +18,17 @@ public:
 	virtual ~CElaborator();
 
 	void printUnassignedSignals();
-	void elaborateSignals(const char* entityPath);
+	void elaborateSignalsFromPath(const char* entityPath);
+	void elaborateSignalsFromEntity(CEntityInstance* entityInstance, int recursionDepth = 0);
+
+	void printNetlist();
 
 private:
 	void printSignalIfUnprinted(const std::string& signalName, bool& printed);
 
-	CEntity* findToplevelEntity(const char* entityName);
-
 	CParser* _parser;
+
+	CNetList* _netlist;
 };
 
 } /* namespace vhdl */

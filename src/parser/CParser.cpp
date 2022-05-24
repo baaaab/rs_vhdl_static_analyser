@@ -14,18 +14,31 @@
 namespace vhdl
 {
 
-CParser::CParser()
+CParser::CParser() :
+		_topPortMap(nullptr)
 {
 
 }
 
 CParser::~CParser()
 {
+	delete _topPortMap;
 
+	for(CEntity* entity : _entities)
+	{
+		delete entity;
+	}
+	_entities.clear();
 }
 
 void CParser::parse(const std::string& filename)
 {
+	if(!_entities.empty())
+	{
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "parse() should only be called once");
+		throw 1;
+	}
+
 	_sourceFileName = filename;
 	_lines = readLines(filename);
 
@@ -35,6 +48,19 @@ void CParser::parse(const std::string& filename)
 
 		parseBlock(itr);
 	}
+
+	_topPortMap = new CPortMap("");
+	_topPortMap->setEntity(findToplevelEntity());
+}
+
+std::vector<CEntity*>& CParser::getEntities()
+{
+	return _entities;
+}
+
+const CPortMap* CParser::getTopPortMap() const
+{
+	return _topPortMap;
 }
 
 void CParser::parseBlock(std::vector<std::string>::iterator& itr)
@@ -302,7 +328,6 @@ void CParser::parseArchitecture(std::vector<std::string>::iterator& itr)
 	// begin
 	++itr;
 
-
 	while(strcmp("end rtl;", itr->c_str()) != 0)
 	{
 		// handle assignment, comment, process or entity instantiation, with/select
@@ -345,7 +370,7 @@ void CParser::parseArchitecture(std::vector<std::string>::iterator& itr)
 				}
 				signalNameCopyPtr++;
 			}
-			CSignal* signal = entity->findSignalByName(signalNameCopy);
+			const CSignal* signal = entity->findSignalByName(signalNameCopy);
 			if(signal != NULL)
 			{
 				parseAssignment(itr, entity);
@@ -935,7 +960,7 @@ void CParser::parseWithSelect(std::vector<std::string>::iterator& itr, CEntity* 
 	}
 }
 
-void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntity* entity)
+void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntity* parentEntity)
 {
 	/*
 	dv : entity work.delay_vector_4_b2aa97e8911ab0960636412a10bb582b30f69335 port map (
@@ -945,8 +970,6 @@ void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntit
 	    q => dv_q);
 	  -- entities/delay_vector.vhd:34:15
 	*/
-
-	CEntityInstance entityInstance;
 
 	const char* ptr = itr->c_str();
 	while(*ptr == ' ' || *ptr == '\t')
@@ -989,6 +1012,8 @@ void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntit
 				}
 				else
 				{
+					CPortMap entityInstance(instanceName);
+
 					char* entityName = strtok_r(NULL, " ", &state);
 					char* portMap = strtok_r(NULL, "", &state);
 					CEntity* entityPtr = NULL;
@@ -1067,10 +1092,10 @@ void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntit
 							endOfPartMapSeen = true;
 						}
 
-						CSignal* localSignal = entity->findSignalByName(localSignalName);
+						CSignal* localSignal = parentEntity->findSignalByName(localSignalName);
 						if(localSignal == NULL)
 						{
-							if(strcmp(localSignalName, "open") == 0 || entity->isConstant(localSignalName))
+							if(strcmp(localSignalName, "open") == 0 || parentEntity->isConstant(localSignalName))
 							{
 								// do nothing (maybe?)
 							}
@@ -1096,6 +1121,8 @@ void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntit
 					{
 						++itr;
 					}
+
+					parentEntity->addEntityInstance(entityInstance);
 				}
 			}
 		}
@@ -1171,9 +1198,12 @@ uint32_t CParser::getLineNumberFromIterator(std::vector<std::string>::iterator& 
 	return std::distance(_lines.begin(), itr)+1;
 }
 
-std::vector<CEntity*>& CParser::getEntities()
+
+const CEntity* CParser::findToplevelEntity() const
 {
-	return _entities;
+	// good enough for now
+	return _entities.front();
 }
+
 
 } /* namespace vhdl */

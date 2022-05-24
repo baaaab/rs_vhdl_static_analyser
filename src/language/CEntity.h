@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "CEntityInstance.h"
+#include "CPortMap.h"
 #include "CSignal.h"
 
 namespace vhdl
@@ -26,12 +26,14 @@ public:
 	const std::string& getName() const;
 	const std::vector<CSignal>& getSignals() const;
 
+	const CSignal* findSignalByName(const char* name) const;
 	CSignal* findSignalByName(const char* name);
-	bool isConstant(const char* name);
+	bool isConstant(const char* name) const;
 
 	std::vector<CSignal*> getContributorsFromStatement(const char* statement);
 
-	void addEntityInstance(const CEntityInstance& instance);
+	void addEntityInstance(const CPortMap& instance);
+	const std::vector<CPortMap>& getChildEntityPortMaps() const;
 
 private:
 	std::string _name;
@@ -44,7 +46,7 @@ private:
 	// key:name, value: definition
 	std::map<std::string, std::string> _subTypes;
 
-	std::vector<CEntityInstance> _entityInstances;
+	std::vector<CPortMap> _entityInstances;
 
 };
 

@@ -20,7 +20,7 @@ const std::string& CInstantiationPort::getChildEntityPortName() const
 	return _childEntityPortName;
 }
 
-const CSignal* CInstantiationPort::getParentEntitySignalName() const
+const CSignal* CInstantiationPort::getParentEntitySignal() const
 {
 	return _parentEntitySignalName;
 }

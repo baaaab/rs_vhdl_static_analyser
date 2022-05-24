@@ -1,14 +1,15 @@
 #ifndef SRC_ELABORATOR_CSIGNALINSTANTIATION_H_
 #define SRC_ELABORATOR_CSIGNALINSTANTIATION_H_
 
-#include <utility>
+#include <string>
 #include <vector>
 
-#include "../language/CEntity.h"
-#include "../language/CSignal.h"
+#include "CEntitySignalPair.h"
 
 namespace vhdl
 {
+class CEntityInstance;
+class CSignal;
 
 class CSignalInstantiation
 {
@@ -16,9 +17,12 @@ public:
 	CSignalInstantiation();
 	virtual ~CSignalInstantiation();
 
+	const std::vector<CEntitySignalPair>& getDefinitions() const;
+	void addDefinition(const CEntityInstance* entity, const CSignal* signal);
+
 private:
-	std::vector<std::pair<CEntity*, CSignal*>> definitions;
-	std::vector<CSignalInstantiation*> _drivers;
+	std::vector<CEntitySignalPair> _definitions;
+
 };
 
 } /* namespace vhdl */

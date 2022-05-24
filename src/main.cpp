@@ -24,5 +24,8 @@ int main(int argc, char** argv)
 	vhdl::CElaborator elaborator(&parser);
 	elaborator.printUnassignedSignals();
 
+	elaborator.elaborateSignalsFromPath("");
+	elaborator.printNetlist();
+
 	return 0;
 }

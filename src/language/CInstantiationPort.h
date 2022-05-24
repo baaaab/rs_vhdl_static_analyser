@@ -14,7 +14,7 @@ public:
 	virtual ~CInstantiationPort();
 
 	const std::string& getChildEntityPortName() const;
-	const CSignal* getParentEntitySignalName() const;
+	const CSignal* getParentEntitySignal() const;
 
 private:
 	CSignal* _parentEntitySignalName;

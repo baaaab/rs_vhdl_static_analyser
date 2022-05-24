@@ -5,9 +5,8 @@
 #include <vector>
 
 #include "../language/CEntity.h"
+#include "../language/CSignal.h"
 #include "../output/ELogLevel.h"
-
-typedef void (*parserFunc)(std::vector<std::string>::iterator&);
 
 namespace vhdl
 {
@@ -21,6 +20,8 @@ public:
 	void parse(const std::string& filename);
 
 	std::vector<CEntity*>& getEntities();
+
+	const CPortMap* getTopPortMap() const;
 
 private:
 
@@ -39,7 +40,7 @@ private:
 	CSignal* parseAssignment(std::vector<std::string>::iterator& itr, CEntity* entity, CSignal* clockSignal = nullptr, std::vector<CSignal*> additionalContributors = {});
 	void parseProcess(std::vector<std::string>::iterator& itr, CEntity* entity);
 	void parseWithSelect(std::vector<std::string>::iterator& itr, CEntity* entity);
-	void parseInstantiation(std::vector<std::string>::iterator& itr, CEntity* entity);
+	void parseInstantiation(std::vector<std::string>::iterator& itr, CEntity* parentEntity);
 
 	// process parsers
 	std::vector<std::string> parseProcessDefinitions(std::vector<std::string>::iterator& itr, CEntity* entity);
@@ -48,6 +49,8 @@ private:
 
 	uint32_t getLineNumberFromIterator(std::vector<std::string>::iterator& itr);
 
+	const CEntity* findToplevelEntity() const;
+
 	std::vector<std::string> _lines;
 
 	std::string _currentLibrary;
@@ -55,6 +58,7 @@ private:
 
 	std::vector<CEntity*> _entities;
 
+	CPortMap* _topPortMap;
 
 };
 

@@ -1,5 +1,5 @@
-#ifndef SRC_LANGUAGE_CENTITYINSTANCE_H_
-#define SRC_LANGUAGE_CENTITYINSTANCE_H_
+#ifndef SRC_LANGUAGE_CPORTMAP_H_
+#define SRC_LANGUAGE_CPORTMAP_H_
 
 #include <string>
 #include <vector>
@@ -10,14 +10,18 @@ namespace vhdl
 {
 class CEntity;
 
-class CEntityInstance
+/*
+ * This class represents an instantion of an entity in an architecture.
+ */
+
+class CPortMap
 {
 public:
-	CEntityInstance(const char* instanceName);
-	virtual ~CEntityInstance();
+	CPortMap(const char* instanceName);
+	virtual ~CPortMap();
 
 	const std::string& getInstanceName() const;
-	void setEntity(CEntity* entity);
+	void setEntity(const CEntity* entity);
 	void addPortMapping(CSignal* driver, const char* driven);
 
 	const CEntity* getEntity() const;
@@ -28,10 +32,10 @@ public:
 private:
 
 	std::string _instanceName;
-	CEntity* _entity;
+	const CEntity* _entity;
 	std::vector<CInstantiationPort> _portMappings;
 };
 
 } /* namespace vhdl */
 
-#endif /* SRC_LANGUAGE_CENTITYINSTANCE_H_ */
+#endif /* SRC_LANGUAGE_CPORTMAP_H_ */

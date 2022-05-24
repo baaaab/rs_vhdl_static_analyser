@@ -45,7 +45,7 @@ void CEntity::addSignal(const char* name, const char* type, const char* synthFil
 {
 	_signals.emplace_back(name, type, synthFile, synthline);
 	CSignal& addedSignal = _signals.back();
-	addedSignal.setIsPort(true);
+	addedSignal.setIsPort(false);
 	if(strstr(name, "wrap") == name)
 	{
 		addedSignal.setIsUserDefined(false);
@@ -103,7 +103,7 @@ const std::vector<CSignal>& CEntity::getSignals() const
 	return _signals;
 }
 
-bool CEntity::isConstant(const char* name)
+bool CEntity::isConstant(const char* name) const
 {
 	for(const std::string& constant : _constants)
 	{
@@ -113,6 +113,18 @@ bool CEntity::isConstant(const char* name)
 		}
 	}
 	return false;
+}
+
+const CSignal* CEntity::findSignalByName(const char* name) const
+{
+	for(const CSignal& signal : _signals)
+	{
+		if(signal.getName() == name)
+		{
+			return &signal;
+		}
+	}
+	return NULL;
 }
 
 CSignal* CEntity::findSignalByName(const char* name)
@@ -252,9 +264,14 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 	return contributors;
 }
 
-void CEntity::addEntityInstance(const CEntityInstance& instance)
+void CEntity::addEntityInstance(const CPortMap& instance)
 {
 	_entityInstances.push_back(instance);
+}
+
+const std::vector<CPortMap>& CEntity::getChildEntityPortMaps() const
+{
+	return _entityInstances;
 }
 
 } /* namespace vhdl */
