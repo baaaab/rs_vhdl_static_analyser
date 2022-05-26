@@ -3,8 +3,8 @@
 namespace vhdl
 {
 
-CInstantiationPort::CInstantiationPort(CSignal* parentEntitySignalName, const char* childEntityPortName) :
-		_parentEntitySignalName(parentEntitySignalName),
+CInstantiationPort::CInstantiationPort(const CSignal* parentEntitySignal, const char* childEntityPortName) :
+		_parentEntitySignal(parentEntitySignal),
 		_childEntityPortName(childEntityPortName)
 {
 
@@ -22,7 +22,12 @@ const std::string& CInstantiationPort::getChildEntityPortName() const
 
 const CSignal* CInstantiationPort::getParentEntitySignal() const
 {
-	return _parentEntitySignalName;
+	return _parentEntitySignal;
+}
+
+void CInstantiationPort::setParentEntitySignal(const CSignal* parentEntitySignal)
+{
+	_parentEntitySignal = parentEntitySignal;
 }
 
 } /* namespace vhdl */

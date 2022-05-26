@@ -15,7 +15,7 @@ OBJECTS := $(OBJECTS_CPP) $(OBJECTS_C)
 
 CC=g++
 LD=g++
-CFLAGS=-MMD -Ofast -ffast-math -march=native -ggdb -O0 -fno-inline
+CFLAGS=-MMD -Wall -Werror -Ofast -ffast-math -march=native -ggdb -O0 -fno-inline
 CFLAGS+=-I../src/maths
 CPPFLAGS=-std=c++11 
 all: $(TARGET)

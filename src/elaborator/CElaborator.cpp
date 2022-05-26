@@ -40,44 +40,44 @@ void CElaborator::printUnassignedSignals()
 	for(CEntity* entity : _parser->getEntities())
 	{
 		printf("Checking entity: %s\n", entity->getName().c_str());
-		for(const CSignal& signal : entity->getSignals())
+		for(const CSignal* signal : entity->getSignals())
 		{
 			bool printed = false;
-			if(signal.getClock() == NULL)
+			if(signal->getClock() == NULL)
 			{
-				if(signal.getCombinatorialContributors().empty())
+				if(signal->getCombinatorialContributors().empty())
 				{
-					if(!signal.isPort())
+					if(!signal->isPort())
 					{
-						printSignalIfUnprinted(signal.getName(), printed);
+						printSignalIfUnprinted(signal->getName(), printed);
 						printf("\t\tNever assigned (unclocked)\n");
 					}
 				}
 			}
-			else if(signal.getClockedContributors().empty())
+			else if(signal->getClockedContributors().empty())
 			{
-				printSignalIfUnprinted(signal.getName(), printed);
+				printSignalIfUnprinted(signal->getName(), printed);
 				printf("\t\tNever assigned (clocked)\n");
 			}
 
-			if(!signal.isPort())
+			if(!signal->isPort())
 			{
-				if(signal.getSourceAssignment().getFile().empty())
+				if(signal->getSourceAssignment().getFile().empty())
 				{
-					printSignalIfUnprinted(signal.getName(), printed);
+					printSignalIfUnprinted(signal->getName(), printed);
 					printf("\t\tNo Source assignment location\n");
 				}
 
-				if(signal.getSynthAssignment().getFile().empty())
+				if(signal->getSynthAssignment().getFile().empty())
 				{
-					printSignalIfUnprinted(signal.getName(), printed);
+					printSignalIfUnprinted(signal->getName(), printed);
 					printf("\t\tNo Synth assignment location\n");
 				}
 			}
 
-			if(signal.getSynthDefinition().getFile().empty())
+			if(signal->getSynthDefinition().getFile().empty())
 			{
-				printSignalIfUnprinted(signal.getName(), printed);
+				printSignalIfUnprinted(signal->getName(), printed);
 				printf("\t\tNo Synth definition location\n");
 			}
 		}
@@ -143,16 +143,16 @@ void CElaborator::elaborateSignalsFromEntity(CEntityInstance* entityInstance, in
 	bool isTopEntity = _netlist->getNets().empty();
 
 	// add all signals in this entity to netlist
-	for(const CSignal& signal : entityInstance->getArchitecture()->getSignals())
+	for(const CSignal* signal : entityInstance->getArchitecture()->getSignals())
 	{
-		if(signal.isPort() && !isTopEntity)
+		if(signal->isPort() && !isTopEntity)
 		{
 			// we will have added this through a port mapping
 		}
 		else
 		{
 			CSignalInstantiation si;
-			si.addDefinition(entityInstance, &signal);
+			si.addDefinition(entityInstance, signal);
 			_netlist->addNet(si);
 		}
 	}
@@ -172,11 +172,11 @@ void CElaborator::elaborateSignalsFromEntity(CEntityInstance* entityInstance, in
 					{
 						if(parentNetDefinition.getEntityInstance() == entityInstance && parentNetDefinition.getSignal()->getName() == ip.getParentEntitySignal()->getName())
 						{
-							for(const CSignal& childSignal : portMap.getEntity()->getSignals())
+							for(const CSignal* childSignal : portMap.getEntity()->getSignals())
 							{
-								if(childSignal.isPort() && childSignal.getName() == ip.getChildEntityPortName())
+								if(childSignal->isPort() && childSignal->getName() == ip.getChildEntityPortName())
 								{
-									si.addDefinition(childEntity, &childSignal);
+									si.addDefinition(childEntity, childSignal);
 									break;
 								}
 							}
@@ -200,15 +200,13 @@ void CElaborator::elaborateNetlistDrivers()
 	 * 	Find drivers from architecture(s)
 	 * 	Find their CSignalInstantiation
 	 * 	Add to the drivers array to simplify future design analysers
-	 *
-	 * 	we may benefit from a filter before this that deals with signal renaming, eg 'wrap_clk <= clk'
 	 */
 	for(CSignalInstantiation& si : _netlist->getNets())
 	{
 		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signalInstance");
 		for(const CEntitySignalPair& esp : si.getDefinitions())
 		{
-			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signal: %s in entity(%p): %s", esp.getSignal()->getName().c_str(), esp.getEntityInstance(), esp.getEntityInstance()->getArchitecture()->getName().c_str());
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signal: %s in entity(%p): %s with assignment: '%s'", esp.getSignal()->getName().c_str(), esp.getEntityInstance(), esp.getEntityInstance()->getArchitecture()->getName().c_str(), esp.getSignal()->getAssignmentStatementRhs().c_str());
 			std::vector<CSignal*> contributors = esp.getSignal()->getClockedContributors();
 			if(contributors.empty())
 			{
@@ -231,10 +229,13 @@ void CElaborator::elaborateNetlistDrivers()
 					std::vector<CSignalInstantiation*> clockSignals = _netlist->findBySignal(esp.getEntityInstance(), esp.getSignal()->getClock());
 					if(clockSignals.size() != 1)
 					{
-						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Signal: '%s' in instance: '%s' of entity: '%s' cannot find clock signal used in process",
+						printNetlist();
+						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Signal: '%s' in instance: '%s' of entity: '%s' cannot find clock signal used in process: '%s'",
 								esp.getSignal()->getName().c_str(),
 								esp.getEntityInstance()->getInstanceName().c_str(),
-								esp.getEntityInstance()->getArchitecture()->getName().c_str());
+								esp.getEntityInstance()->getArchitecture()->getName().c_str(),
+								esp.getSignal()->getClock()->getName().c_str()
+								);
 						throw 1;
 					}
 					si.setClock(clockSignals.front());

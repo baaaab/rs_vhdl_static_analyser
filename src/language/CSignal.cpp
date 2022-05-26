@@ -31,6 +31,7 @@ void CSignal::setClockedContributors(CSignal* clockSignal, const std::vector<CSi
 {
 	_clock = clockSignal;
 	_clockedContributors = clockedContributors;
+	_combinatorialContributors.clear();
 }
 
 const std::vector<CSignal*>& CSignal::getCombinatorialContributors() const
@@ -41,6 +42,8 @@ const std::vector<CSignal*>& CSignal::getCombinatorialContributors() const
 void CSignal::setCombinatorialContributors(const std::vector<CSignal*>& combinatorialContributors)
 {
 	_combinatorialContributors = combinatorialContributors;
+	_clock = NULL;
+	_clockedContributors.clear();
 }
 
 bool CSignal::isInput() const
@@ -134,6 +137,11 @@ const std::string& CSignal::getType() const
 }
 
 const CSignal* CSignal::getClock() const
+{
+	return _clock;
+}
+
+CSignal* CSignal::getClock()
 {
 	return _clock;
 }

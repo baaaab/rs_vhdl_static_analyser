@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <cstring>
 
+#include "../elaborator/CSignalUnRenamer.h"
 #include "../output/CLogger.h"
 #include "../output/ELogLevel.h"
 
@@ -22,33 +23,32 @@ CEntity::~CEntity()
 
 void CEntity::addPort(const char* name, const char* direction, const char* type, const char* synthFile, uint32_t synthline)
 {
-	_signals.emplace_back(name, type, synthFile, synthline);
-	CSignal& addedSignal = _signals.back();
-	addedSignal.setIsPort(true);
-	addedSignal.setIsUserDefined(true);
+	CSignal* addedSignal = new CSignal(name, type, synthFile, synthline);
+	addedSignal->setIsPort(true);
+	addedSignal->setIsUserDefined(true);
 	if(strcmp(direction, "in") == 0)
 	{
-		addedSignal.setIsInput(true);
+		addedSignal->setIsInput(true);
 	}
 	if(strcmp(direction, "out") == 0)
 	{
-		addedSignal.setIsOutput(true);
+		addedSignal->setIsOutput(true);
 	}
 	if(strcmp(direction, "inout") == 0)
 	{
-		addedSignal.setIsInput(true);
-		addedSignal.setIsOutput(true);
+		addedSignal->setIsInput(true);
+		addedSignal->setIsOutput(true);
 	}
+	_signals.push_back(addedSignal);
 }
 
 void CEntity::addSignal(const char* name, const char* type, const char* synthFile, uint32_t synthline)
 {
-	_signals.emplace_back(name, type, synthFile, synthline);
-	CSignal& addedSignal = _signals.back();
-	addedSignal.setIsPort(false);
-	if(strstr(name, "wrap") == name)
+	CSignal* addedSignal = new CSignal(name, type, synthFile, synthline);
+	addedSignal->setIsPort(false);
+	if(strstr(name, "wrap_") == name)
 	{
-		addedSignal.setIsUserDefined(false);
+		addedSignal->setIsUserDefined(false);
 	}
 	else
 	{
@@ -75,10 +75,11 @@ void CEntity::addSignal(const char* name, const char* type, const char* synthFil
 			}
 			if(numberOfDigits > 0)
 			{
-				addedSignal.setIsUserDefined(false);
+				addedSignal->setIsUserDefined(false);
 			}
 		}
 	}
+	_signals.push_back(addedSignal);
 }
 
 void CEntity::addConstant(const char* name, const char* type, const char* value, const char* synthFile, uint32_t synthline)
@@ -98,7 +99,7 @@ const std::string& CEntity::getName() const
 	return _name;
 }
 
-const std::vector<CSignal>& CEntity::getSignals() const
+const std::vector<CSignal*>& CEntity::getSignals() const
 {
 	return _signals;
 }
@@ -117,11 +118,11 @@ bool CEntity::isConstant(const char* name) const
 
 const CSignal* CEntity::findSignalByName(const char* name) const
 {
-	for(const CSignal& signal : _signals)
+	for(const CSignal* signal : _signals)
 	{
-		if(signal.getName() == name)
+		if(signal->getName() == name)
 		{
-			return &signal;
+			return signal;
 		}
 	}
 	return NULL;
@@ -129,11 +130,11 @@ const CSignal* CEntity::findSignalByName(const char* name) const
 
 CSignal* CEntity::findSignalByName(const char* name)
 {
-	for(CSignal& signal : _signals)
+	for(CSignal* signal : _signals)
 	{
-		if(signal.getName() == name)
+		if(signal->getName() == name)
 		{
-			return &signal;
+			return signal;
 		}
 	}
 	return NULL;
@@ -209,11 +210,11 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 		}
 
 		bool signalFound = false;
-		for(CSignal& signal : _signals)
+		for(CSignal* signal : _signals)
 		{
-			if(signal.getName() == possibleContributor)
+			if(signal->getName() == possibleContributor)
 			{
-				contributors.push_back(&signal);
+				contributors.push_back(signal);
 				signalFound = true;
 				//CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Found contributor: '%s'", possibleContributor);
 				break;
@@ -262,11 +263,11 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 			}
 
 
-			for(CSignal& signal : _signals)
+			for(CSignal* signal : _signals)
 			{
-				if(signal.getName() == possibleContributor)
+				if(signal->getName() == possibleContributor)
 				{
-					contributors.push_back(&signal);
+					contributors.push_back(signal);
 					signalFound = true;
 					//CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Found contributor: '%s'", possibleContributor);
 					break;
@@ -300,6 +301,12 @@ void CEntity::addEntityInstance(const CPortMap& instance)
 const std::vector<CPortMap>& CEntity::getChildEntityPortMaps() const
 {
 	return _entityInstances;
+}
+
+void CEntity::simplify()
+{
+	CSignalUnRenamer unrenamer;
+	unrenamer.simplifyEntityArchitecture(_signals, _entityInstances);
 }
 
 } /* namespace vhdl */

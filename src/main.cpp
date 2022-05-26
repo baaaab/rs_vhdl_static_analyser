@@ -29,7 +29,7 @@ int main(int argc, char** argv)
 	//elaborator.printNetlist();
 
 	vhdl::CDotGraphCreator graphCreator("bob.dot");
-	graphCreator.setUserDefinedSignalsOnly(false);
+	graphCreator.setUserDefinedSignalsOnly(true);
 	graphCreator.createDotGraph(elaborator.getNetlist());
 
 	return 0;

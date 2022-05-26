@@ -10,14 +10,15 @@ class CSignal;
 class CInstantiationPort
 {
 public:
-	CInstantiationPort(CSignal* parentEntitySignalName, const char* childEntityPortName);
+	CInstantiationPort(const CSignal* parentEntitySignal, const char* childEntityPortName);
 	virtual ~CInstantiationPort();
 
 	const std::string& getChildEntityPortName() const;
 	const CSignal* getParentEntitySignal() const;
+	void setParentEntitySignal(const CSignal* parentEntitySignal);
 
 private:
-	CSignal* _parentEntitySignalName;
+	const CSignal* _parentEntitySignal;
 	std::string _childEntityPortName;
 };
 

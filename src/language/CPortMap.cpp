@@ -40,6 +40,15 @@ const std::vector<CInstantiationPort>& CPortMap::getPortMappings() const
 	return _portMappings;
 }
 
-
+void CPortMap::replaceSignal(CSignal* find, CSignal* replace)
+{
+	for(CInstantiationPort& ip : _portMappings)
+	{
+		if(ip.getParentEntitySignal() == find)
+		{
+			ip.setParentEntitySignal(replace);
+		}
+	}
+}
 
 } /* namespace vhdl */

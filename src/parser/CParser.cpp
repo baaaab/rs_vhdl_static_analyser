@@ -108,7 +108,7 @@ std::vector<std::string> CParser::readLines(const std::string& filename)
 	size_t lineBufferSize = 1024;
 	char* lineBuffer = (char*)malloc(lineBufferSize);
 
-	size_t lineBytes = 0;
+	ssize_t lineBytes = 0;
 
 	while((lineBytes = getline(&lineBuffer, &lineBufferSize, fh)) != -1)
 	{
@@ -388,6 +388,8 @@ void CParser::parseArchitecture(std::vector<std::string>::iterator& itr)
 
 	//end rtl
 	++itr;
+
+	entity->simplify();
 }
 
 void CParser::parseSignals(std::vector<std::string>::iterator& itr, CEntity* entity)
@@ -487,9 +489,9 @@ void CParser::parseSignals(std::vector<std::string>::iterator& itr, CEntity* ent
 		free(copy);
 	}
 
-	for(const CSignal& signal : entity->getSignals())
+	for(const CSignal* signal : entity->getSignals())
 	{
-		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "'%s'", signal.getName().c_str());
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "'%s'", signal->getName().c_str());
 	}
 }
 
@@ -816,7 +818,7 @@ void CParser::parseProcess(std::vector<std::string>::iterator& itr, CEntity* ent
 	// end process;
 	++itr;
 
-	int assignmentIndex = 0;
+	uint32_t assignmentIndex = 0;
 
 	// we may now have a series of comments
 	while(1)
@@ -929,7 +931,7 @@ void CParser::parseWithSelect(std::vector<std::string>::iterator& itr, CEntity* 
 
 		state = NULL;
 		char* rhs = strtok_r(copy, " ", &state);
-		char* when = strtok_r(NULL, " ", &state);
+		/*char* when = */strtok_r(NULL, " ", &state);
 		char* constant = strtok_r(NULL, "", &state);
 		char* finalCharacter = constant + strlen(constant)-1;
 		if(*finalCharacter == ';')

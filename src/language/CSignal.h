@@ -50,6 +50,7 @@ public:
 	const std::string& getType() const;
 
 	const CSignal* getClock() const;
+	CSignal* getClock();
 
 	const std::string& getAssignmentStatementRhs() const;
 	void setAssignmentStatementRhs(const char* assignmentStatementRhs);

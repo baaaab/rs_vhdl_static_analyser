@@ -24,7 +24,7 @@ public:
 	void addSubType(const char* name, const char* type, const char* synthFile, uint32_t synthline);
 
 	const std::string& getName() const;
-	const std::vector<CSignal>& getSignals() const;
+	const std::vector<CSignal*>& getSignals() const;
 
 	const CSignal* findSignalByName(const char* name) const;
 	CSignal* findSignalByName(const char* name);
@@ -35,10 +35,12 @@ public:
 	void addEntityInstance(const CPortMap& instance);
 	const std::vector<CPortMap>& getChildEntityPortMaps() const;
 
+	void simplify();
+
 private:
 	std::string _name;
 
-	std::vector<CSignal> _signals;
+	std::vector<CSignal*> _signals;
 
 	// we don't care about the values for now, so just store the names
 	std::vector<std::string> _constants;

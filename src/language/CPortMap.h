@@ -29,6 +29,8 @@ public:
 	// list may not cover all ports if any were open or wired to constants
 	const std::vector<CInstantiationPort>& getPortMappings() const;
 
+	void replaceSignal(CSignal* find, CSignal* replace);
+
 private:
 
 	std::string _instanceName;
