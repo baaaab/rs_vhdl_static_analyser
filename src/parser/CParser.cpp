@@ -786,6 +786,7 @@ void CParser::parseProcess(std::vector<std::string>::iterator& itr, CEntity* ent
 			error(ELogLevel::FATAL, itr);
 		}
 
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Parsing if rising_edge() statement: '%s'", ptr);
 		std::vector<CSignal*> clockedContibutorsFromIfStatement = entity->getContributorsFromStatement(ptr);
 
 		++itr;
@@ -896,7 +897,7 @@ void CParser::parseWithSelect(std::vector<std::string>::iterator& itr, CEntity* 
 	}
 
 	CSignal* readSignal = entity->findSignalByName(readValue);
-	CSignal* writeSignal = entity->findSignalByName(readValue);
+	CSignal* writeSignal = entity->findSignalByName(writeValue);
 
 	if(readSignal == NULL || writeSignal == NULL)
 	{
@@ -912,6 +913,7 @@ void CParser::parseWithSelect(std::vector<std::string>::iterator& itr, CEntity* 
 	synthAssignmentLocation.setFromFileAndline(_sourceFileName, getLineNumberFromIterator(itr));
 
 	std::vector<CSignal*> allContributors;
+	allContributors.push_back(readSignal);
 
 	bool endFound = false;
 
@@ -928,14 +930,15 @@ void CParser::parseWithSelect(std::vector<std::string>::iterator& itr, CEntity* 
 		state = NULL;
 		char* rhs = strtok_r(copy, " ", &state);
 		char* when = strtok_r(NULL, " ", &state);
-		char* constantOrSignal = strtok_r(NULL, "", &state);
-		char* finalCharacter = constantOrSignal + strlen(constantOrSignal)-1;
+		char* constant = strtok_r(NULL, "", &state);
+		char* finalCharacter = constant + strlen(constant)-1;
 		if(*finalCharacter == ';')
 		{
 			endFound = true;
 		}
 		*finalCharacter = 0;
-		std::vector<CSignal*> contributors = entity->getContributorsFromStatement(constantOrSignal);
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Parsing with/select, driven signal: '%s', value: '%s'", writeSignal->getName().c_str(), rhs);
+		std::vector<CSignal*> contributors = entity->getContributorsFromStatement(rhs);
 		allContributors.insert(allContributors.end(), contributors.begin(), contributors.end());
 		++itr;
 		free(copy);
