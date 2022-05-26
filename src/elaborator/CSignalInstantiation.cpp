@@ -50,8 +50,20 @@ void CSignalInstantiation::setClock(const CSignalInstantiation* clockSignalInsta
 std::string CSignalInstantiation::generateUniqueIdentifier() const
 {
 	std::string uniqueIdentifier = _definitions.front().getSignal()->getName();
-
 	const CEntityInstance* entityInstance = _definitions.front().getEntityInstance();
+	bool isUserDefined = _definitions.front().getSignal()->isUserDefined();
+	if(!isUserDefined)
+	{
+		for(const CEntitySignalPair& esp : _definitions)
+		{
+			if(esp.getSignal()->isUserDefined())
+			{
+				uniqueIdentifier = esp.getSignal()->getName();
+				entityInstance = esp.getEntityInstance();
+				break;
+			}
+		}
+	}
 
 	while(entityInstance->getParent() != NULL)
 	{

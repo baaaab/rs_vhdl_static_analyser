@@ -57,14 +57,6 @@ void CEntity::addSignal(const char* name, const char* type, const char* synthFil
 		{
 			numberCheckPtr = name+1;
 		}
-		else
-		{
-			const char* underScoreN = strstr(name, "_n");
-			if(underScoreN)
-			{
-				numberCheckPtr = underScoreN + 2;
-			}
-		}
 		if(numberCheckPtr != NULL)
 		{
 			uint32_t numberOfDigits = 0;

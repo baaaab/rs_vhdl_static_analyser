@@ -203,10 +203,10 @@ void CElaborator::elaborateNetlistDrivers()
 	 */
 	for(CSignalInstantiation& si : _netlist->getNets())
 	{
-		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signalInstance");
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signalInstance, isUserDefined: %d", si.isUserDefined());
 		for(const CEntitySignalPair& esp : si.getDefinitions())
 		{
-			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signal: %s in entity(%p): %s with assignment: '%s'", esp.getSignal()->getName().c_str(), esp.getEntityInstance(), esp.getEntityInstance()->getArchitecture()->getName().c_str(), esp.getSignal()->getAssignmentStatementRhs().c_str());
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signal: %s in entity: %s with assignment: '%s'", esp.getSignal()->getName().c_str(), esp.getEntityInstance()->getArchitecture()->getName().c_str(), esp.getSignal()->getAssignmentStatementRhs().c_str());
 			std::vector<CSignal*> contributors = esp.getSignal()->getClockedContributors();
 			if(contributors.empty())
 			{

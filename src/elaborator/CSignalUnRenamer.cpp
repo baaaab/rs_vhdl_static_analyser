@@ -70,12 +70,14 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 					CSignal* unRenamed = NULL;
 					std::string assignmentRhsString;
 					std::string signalName;
+					bool forwardContributors = false;
 					if(!signal->isUserDefined() && contributors.front()->isUserDefined())
 					{
 						signalToReplace = signal;
 						unRenamed = contributors.front();
 						assignmentRhsString = signal->getAssignmentStatementRhs();
 						signalName = unRenamed->getName();
+						forwardContributors = false;
 					}
 					else if(signal->isUserDefined() && !contributors.front()->isUserDefined())
 					{
@@ -83,6 +85,7 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 						unRenamed = signal;
 						assignmentRhsString = unRenamed->getAssignmentStatementRhs();
 						signalName = signalToReplace->getName();
+						forwardContributors = true;
 					}
 
 					if(signalToReplace && unRenamed)
@@ -121,14 +124,17 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 								}
 							}
 
-							// there is probably a better way to write this
-							if(signalToReplace->getClock() != NULL && unRenamed->getClock() == NULL)
+							if(forwardContributors)
 							{
-								unRenamed->setClockedContributors(signalToReplace->getClock(), signalToReplace->getClockedContributors());
-							}
-							else if(signalToReplace->getClock() == NULL && unRenamed->getClock() == NULL)
-							{
-								unRenamed->setCombinatorialContributors(signalToReplace->getCombinatorialContributors());
+								// there is probably a better way to write this
+								if(signalToReplace->getClock() != NULL && unRenamed->getClock() == NULL)
+								{
+									unRenamed->setClockedContributors(signalToReplace->getClock(), signalToReplace->getClockedContributors());
+								}
+								else if(signalToReplace->getClock() == NULL && unRenamed->getClock() == NULL)
+								{
+									unRenamed->setCombinatorialContributors(signalToReplace->getCombinatorialContributors());
+								}
 							}
 
 							for(CPortMap& pm : entityInstances)
