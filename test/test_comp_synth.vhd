@@ -34,30 +34,30 @@ end entity delay_bit_4;
 
 architecture rtl of delay_bit_4 is
   signal shreg : std_logic_vector (3 downto 0);
-  signal n303_o : std_logic_vector (2 downto 0);
-  signal n304_o : std_logic_vector (3 downto 0);
-  signal n308_o : std_logic_vector (3 downto 0);
-  signal n309_q : std_logic_vector (3 downto 0);
-  signal n310_o : std_logic;
+  signal n295_o : std_logic_vector (2 downto 0);
+  signal n296_o : std_logic_vector (3 downto 0);
+  signal n300_o : std_logic_vector (3 downto 0);
+  signal n301_q : std_logic_vector (3 downto 0);
+  signal n302_o : std_logic;
 begin
-  q <= n310_o;
+  q <= n302_o;
   -- entities/delay_bit.vhd:20:10
-  shreg <= n309_q; -- (signal)
+  shreg <= n301_q; -- (signal)
   -- entities/delay_bit.vhd:26:23
-  n303_o <= shreg (2 downto 0);
+  n295_o <= shreg (2 downto 0);
   -- entities/delay_bit.vhd:26:44
-  n304_o <= n303_o & d;
+  n296_o <= n295_o & d;
   -- entities/delay_bit.vhd:24:5
-  n308_o <= shreg when clken = '0' else n304_o;
+  n300_o <= shreg when clken = '0' else n296_o;
   -- entities/delay_bit.vhd:24:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n309_q <= n308_o;
+      n301_q <= n300_o;
     end if;
   end process;
   -- entities/delay_bit.vhd:31:13
-  n310_o <= shreg (3);
+  n302_o <= shreg (3);
 end rtl;
 
 library ieee;
@@ -73,15 +73,37 @@ entity delay_vector_4_c17fd92682ca5b304ac71074b558dda9e8eb4d66 is
 end entity delay_vector_4_c17fd92682ca5b304ac71074b558dda9e8eb4d66;
 
 architecture rtl of delay_vector_4_c17fd92682ca5b304ac71074b558dda9e8eb4d66 is
-  signal gen_bits_n1_db_q : std_logic;
+  signal shreg : std_logic_vector (3 downto 0);
+  signal n281_o : std_logic;
+  signal n282_o : std_logic;
+  signal n283_o : std_logic;
+  signal n284_o : std_logic_vector (3 downto 0);
+  signal n288_o : std_logic_vector (3 downto 0);
+  signal n289_q : std_logic_vector (3 downto 0);
+  signal n290_o : std_logic;
 begin
-  q <= gen_bits_n1_db_q;
+  q <= n290_o;
+  -- entities/delay_vector.vhd:21:10
+  shreg <= n289_q; -- (signal)
+  -- entities/delay_vector.vhd:28:30
+  n281_o <= shreg (0);
+  -- entities/delay_vector.vhd:28:30
+  n282_o <= shreg (1);
+  -- entities/delay_vector.vhd:28:30
+  n283_o <= shreg (2);
+  -- entities/async_dpram.vhd:45:5
+  n284_o <= n283_o & n282_o & n281_o & d;
   -- entities/delay_vector.vhd:25:5
-  gen_bits_n1_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => d,
-    q => gen_bits_n1_db_q);
+  n288_o <= shreg when clken = '0' else n284_o;
+  -- entities/delay_vector.vhd:25:5
+  process (clk)
+  begin
+    if rising_edge (clk) then
+      n289_q <= n288_o;
+    end if;
+  end process;
+  -- entities/delay_vector.vhd:35:13
+  n290_o <= shreg (3);
 end rtl;
 
 library ieee;
@@ -107,35 +129,35 @@ end entity async_dpram_9_33_bf8b4530d8d246dd74ac53a13471bba17941dff7;
 architecture rtl of async_dpram_9_33_bf8b4530d8d246dd74ac53a13471bba17941dff7 is
   signal ram_out_a : std_logic_vector (32 downto 0);
   signal ram_out_b : std_logic_vector (32 downto 0);
-  signal n256_o : std_logic;
-  signal n275_o : std_logic;
-  signal n284_q : std_logic_vector (32 downto 0);
-  signal n290_q : std_logic_vector (32 downto 0);
-  signal n293_data : std_logic_vector (32 downto 0);
-  signal n294_data : std_logic_vector (32 downto 0);
+  signal n236_o : std_logic;
+  signal n255_o : std_logic;
+  signal n264_q : std_logic_vector (32 downto 0);
+  signal n270_q : std_logic_vector (32 downto 0);
+  signal n273_data : std_logic_vector (32 downto 0);
+  signal n274_data : std_logic_vector (32 downto 0);
 begin
-  doa <= n284_q;
-  dob <= n290_q;
+  doa <= n264_q;
+  dob <= n270_q;
   -- entities/async_dpram.vhd:40:10
-  ram_out_a <= n294_data; -- (signal)
+  ram_out_a <= n274_data; -- (signal)
   -- entities/async_dpram.vhd:41:10
-  ram_out_b <= n293_data; -- (signal)
+  ram_out_b <= n273_data; -- (signal)
   -- entities/async_dpram.vhd:12:8
-  n256_o <= wea and ena;
+  n236_o <= wea and ena;
   -- entities/async_dpram.vhd:12:8
-  n275_o <= web and enb;
+  n255_o <= web and enb;
   -- entities/async_dpram.vhd:68:7
   process (clka)
   begin
     if rising_edge (clka) then
-      n284_q <= ram_out_a;
+      n264_q <= ram_out_a;
     end if;
   end process;
   -- entities/async_dpram.vhd:74:7
   process (clkb)
   begin
     if rising_edge (clkb) then
-      n290_q <= ram_out_b;
+      n270_q <= ram_out_b;
     end if;
   end process;
   -- entities/async_dpram.vhd:31:5
@@ -145,15 +167,15 @@ begin
     variable ram : ram_type := (others => (others => 'X'));
   begin
     if rising_edge (clkb) and (enb = '1') then
-      n293_data <= ram(to_integer (unsigned (addrb)));
+      n273_data <= ram(to_integer (unsigned (addrb)));
     end if;
     if rising_edge (clka) and (ena = '1') then
-      n294_data <= ram(to_integer (unsigned (addra)));
+      n274_data <= ram(to_integer (unsigned (addra)));
     end if;
-    if rising_edge (clkb) and (n275_o = '1') then
+    if rising_edge (clkb) and (n255_o = '1') then
       ram (to_integer (unsigned (addrb))) := dib;
     end if;
-    if rising_edge (clka) and (n256_o = '1') then
+    if rising_edge (clka) and (n236_o = '1') then
       ram (to_integer (unsigned (addra))) := dia;
     end if;
   end process;
@@ -176,170 +198,37 @@ entity delay_vector_4_b2aa97e8911ab0960636412a10bb582b30f69335 is
 end entity delay_vector_4_b2aa97e8911ab0960636412a10bb582b30f69335;
 
 architecture rtl of delay_vector_4_b2aa97e8911ab0960636412a10bb582b30f69335 is
-  signal gen_bits_n1_db_q : std_logic;
-  signal n205_o : std_logic;
-  signal gen_bits_n2_db_q : std_logic;
-  signal n207_o : std_logic;
-  signal gen_bits_n3_db_q : std_logic;
-  signal n209_o : std_logic;
-  signal gen_bits_n4_db_q : std_logic;
-  signal n211_o : std_logic;
-  signal gen_bits_n5_db_q : std_logic;
-  signal n213_o : std_logic;
-  signal gen_bits_n6_db_q : std_logic;
-  signal n215_o : std_logic;
-  signal gen_bits_n7_db_q : std_logic;
-  signal n217_o : std_logic;
-  signal gen_bits_n8_db_q : std_logic;
-  signal n219_o : std_logic;
-  signal gen_bits_n9_db_q : std_logic;
-  signal n221_o : std_logic;
-  signal gen_bits_n10_db_q : std_logic;
-  signal n223_o : std_logic;
-  signal gen_bits_n11_db_q : std_logic;
-  signal n225_o : std_logic;
-  signal gen_bits_n12_db_q : std_logic;
-  signal n227_o : std_logic;
-  signal gen_bits_n13_db_q : std_logic;
-  signal n229_o : std_logic;
-  signal gen_bits_n14_db_q : std_logic;
-  signal n231_o : std_logic;
-  signal gen_bits_n15_db_q : std_logic;
-  signal n233_o : std_logic;
-  signal gen_bits_n16_db_q : std_logic;
-  signal n235_o : std_logic;
-  signal n237_o : std_logic_vector (15 downto 0);
+  signal shreg : std_logic_vector (63 downto 0);
+  signal n208_o : std_logic_vector (15 downto 0);
+  signal n209_o : std_logic_vector (15 downto 0);
+  signal n210_o : std_logic_vector (15 downto 0);
+  signal n211_o : std_logic_vector (63 downto 0);
+  signal n215_o : std_logic_vector (63 downto 0);
+  signal n216_q : std_logic_vector (63 downto 0);
+  signal n217_o : std_logic_vector (15 downto 0);
 begin
-  q <= n237_o;
+  q <= n217_o;
+  -- entities/delay_vector.vhd:21:10
+  shreg <= n216_q; -- (signal)
+  -- entities/delay_vector.vhd:28:30
+  n208_o <= shreg (15 downto 0);
+  -- entities/delay_vector.vhd:28:30
+  n209_o <= shreg (31 downto 16);
+  -- entities/delay_vector.vhd:28:30
+  n210_o <= shreg (47 downto 32);
+  -- entities/abs_square.vhd:66:3
+  n211_o <= n210_o & n209_o & n208_o & d;
   -- entities/delay_vector.vhd:25:5
-  gen_bits_n1_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n205_o,
-    q => gen_bits_n1_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n205_o <= d (0);
+  n215_o <= shreg when clken = '0' else n211_o;
   -- entities/delay_vector.vhd:25:5
-  gen_bits_n2_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n207_o,
-    q => gen_bits_n2_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n207_o <= d (1);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n3_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n209_o,
-    q => gen_bits_n3_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n209_o <= d (2);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n4_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n211_o,
-    q => gen_bits_n4_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n211_o <= d (3);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n5_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n213_o,
-    q => gen_bits_n5_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n213_o <= d (4);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n6_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n215_o,
-    q => gen_bits_n6_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n215_o <= d (5);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n7_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n217_o,
-    q => gen_bits_n7_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n217_o <= d (6);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n8_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n219_o,
-    q => gen_bits_n8_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n219_o <= d (7);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n9_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n221_o,
-    q => gen_bits_n9_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n221_o <= d (8);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n10_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n223_o,
-    q => gen_bits_n10_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n223_o <= d (9);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n11_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n225_o,
-    q => gen_bits_n11_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n225_o <= d (10);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n12_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n227_o,
-    q => gen_bits_n12_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n227_o <= d (11);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n13_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n229_o,
-    q => gen_bits_n13_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n229_o <= d (12);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n14_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n231_o,
-    q => gen_bits_n14_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n231_o <= d (13);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n15_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n233_o,
-    q => gen_bits_n15_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n233_o <= d (14);
-  -- entities/delay_vector.vhd:25:5
-  gen_bits_n16_db : entity work.delay_bit_4 port map (
-    clk => clk,
-    clken => clken,
-    d => n235_o,
-    q => gen_bits_n16_db_q);
-  -- entities/delay_vector.vhd:34:15
-  n235_o <= d (15);
-  n237_o <= gen_bits_n16_db_q & gen_bits_n15_db_q & gen_bits_n14_db_q & gen_bits_n13_db_q & gen_bits_n12_db_q & gen_bits_n11_db_q & gen_bits_n10_db_q & gen_bits_n9_db_q & gen_bits_n8_db_q & gen_bits_n7_db_q & gen_bits_n6_db_q & gen_bits_n5_db_q & gen_bits_n4_db_q & gen_bits_n3_db_q & gen_bits_n2_db_q & gen_bits_n1_db_q;
+  process (clk)
+  begin
+    if rising_edge (clk) then
+      n216_q <= n215_o;
+    end if;
+  end process;
+  -- entities/delay_vector.vhd:35:13
+  n217_o <= shreg (63 downto 48);
 end rtl;
 
 library ieee;

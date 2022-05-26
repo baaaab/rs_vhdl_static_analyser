@@ -19,9 +19,16 @@ public:
 
 	void printUnassignedSignals();
 	void elaborateSignalsFromPath(const char* entityPath);
-	void elaborateSignalsFromEntity(CEntityInstance* entityInstance, int recursionDepth = 0);
 
+
+
+private:
+	void elaborateSignalsFromEntity(CEntityInstance* entityInstance, int recursionDepth = 0);
+	void elaborateNetlistDrivers();
+
+public:
 	void printNetlist();
+	const CNetList* getNetlist() const;
 
 private:
 	void printSignalIfUnprinted(const std::string& signalName, bool& printed);

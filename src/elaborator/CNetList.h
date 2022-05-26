@@ -15,10 +15,11 @@ public:
 	CNetList(const CEntity* architecture);
 	virtual ~CNetList();
 
-	std::vector<CSignalInstantiation*> findBySignal(CSignal* signal);
+	std::vector<CSignalInstantiation*> findBySignal(const CEntityInstance* entityInstance, const CSignal* signal);
 
 	// caller should not modify the vector (modifying members is ok)
 	std::vector<CSignalInstantiation>& getNets();
+	const std::vector<CSignalInstantiation>& getNets() const;
 
 	void addNet(const CSignalInstantiation& net);
 

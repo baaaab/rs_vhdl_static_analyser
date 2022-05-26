@@ -1,6 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 
+#include "dot/CDotGraphCreator.h"
 #include "elaborator/CElaborator.h"
 #include "parser/CParser.h"
 
@@ -22,10 +23,14 @@ int main(int argc, char** argv)
 	parser.parse(argv[1]);
 
 	vhdl::CElaborator elaborator(&parser);
-	elaborator.printUnassignedSignals();
+	//elaborator.printUnassignedSignals();
 
 	elaborator.elaborateSignalsFromPath("");
-	elaborator.printNetlist();
+	//elaborator.printNetlist();
+
+	vhdl::CDotGraphCreator graphCreator("bob.dot");
+	graphCreator.setUserDefinedSignalsOnly(false);
+	graphCreator.createDotGraph(elaborator.getNetlist());
 
 	return 0;
 }

@@ -19,14 +19,14 @@ CNetList::~CNetList()
 	delete _topEntity;
 }
 
-std::vector<CSignalInstantiation*> CNetList::findBySignal(CSignal* signal)
+std::vector<CSignalInstantiation*> CNetList::findBySignal(const CEntityInstance* entityInstance, const CSignal* signal)
 {
 	std::vector<CSignalInstantiation*> ret;
 	for(CSignalInstantiation& net : _netlist)
 	{
 		for(const CEntitySignalPair& sp : net.getDefinitions())
 		{
-			if(sp.getSignal() == signal)
+			if(sp.getEntityInstance() == entityInstance && sp.getSignal() == signal)
 			{
 				ret.push_back(&net);
 			}
@@ -36,6 +36,11 @@ std::vector<CSignalInstantiation*> CNetList::findBySignal(CSignal* signal)
 }
 
 std::vector<CSignalInstantiation>& CNetList::getNets()
+{
+	return _netlist;
+}
+
+const std::vector<CSignalInstantiation>& CNetList::getNets() const
 {
 	return _netlist;
 }

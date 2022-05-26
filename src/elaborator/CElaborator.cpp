@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <utility>
 #include <vector>
+#include <set>
 
 #include "../language/CEntity.h"
 #include "../language/CInstantiationPort.h"
@@ -127,6 +128,7 @@ void CElaborator::elaborateSignalsFromPath(const char* entityPath)
 	_netlist = new CNetList(portMap->getEntity());
 
 	elaborateSignalsFromEntity(_netlist->getTopEntity());
+	elaborateNetlistDrivers();
 }
 
 void CElaborator::elaborateSignalsFromEntity(CEntityInstance* entityInstance, int recursionDepth)
@@ -140,19 +142,15 @@ void CElaborator::elaborateSignalsFromEntity(CEntityInstance* entityInstance, in
 
 	bool isTopEntity = _netlist->getNets().empty();
 
-
 	// add all signals in this entity to netlist
 	for(const CSignal& signal : entityInstance->getArchitecture()->getSignals())
 	{
 		if(signal.isPort() && !isTopEntity)
 		{
 			// we will have added this through a port mapping
-			printf("NOT Adding to netlist: %s.%s (%d, %d)\n", entityInstance->getInstanceName().c_str(), signal.getName().c_str(), signal.isPort(), isTopEntity);
 		}
 		else
 		{
-			printf("Adding to netlist: %s.%s\n", entityInstance->getInstanceName().c_str(), signal.getName().c_str());
-
 			CSignalInstantiation si;
 			si.addDefinition(entityInstance, &signal);
 			_netlist->addNet(si);
@@ -162,28 +160,22 @@ void CElaborator::elaborateSignalsFromEntity(CEntityInstance* entityInstance, in
 	// probably needs some error handling when something is not found
 	for(const CPortMap& portMap : entityInstance->getArchitecture()->getChildEntityPortMaps())
 	{
-		printf("[%d] Inspecting entity: %s\n", recursionDepth, portMap.getEntity()->getName().c_str());
-
 		CEntityInstance* childEntity = entityInstance->addChildEntity(portMap.getInstanceName().c_str(), portMap.getEntity());
 
 		for(const CInstantiationPort& ip : portMap.getPortMappings())
 		{
 			if(ip.getParentEntitySignal())
 			{
-				printf("\tInspecting port mapping: %s -> %s\n", ip.getParentEntitySignal()->getName().c_str(), ip.getChildEntityPortName().c_str());
 				for(CSignalInstantiation& si : _netlist->getNets())
 				{
 					for(const CEntitySignalPair& parentNetDefinition : si.getDefinitions())
 					{
 						if(parentNetDefinition.getEntityInstance() == entityInstance && parentNetDefinition.getSignal()->getName() == ip.getParentEntitySignal()->getName())
 						{
-							printf("\t\tInspecting netlist entry: %s.%s\n", parentNetDefinition.getEntityInstance()->getArchitecture()->getName().c_str(), parentNetDefinition.getSignal()->getName().c_str());
 							for(const CSignal& childSignal : portMap.getEntity()->getSignals())
 							{
-								printf("\t\t\tInspecting child signal: %s\n", childSignal.getName().c_str());
 								if(childSignal.isPort() && childSignal.getName() == ip.getChildEntityPortName())
 								{
-									printf("\t\t\t\tAdding definition\n");
 									si.addDefinition(childEntity, &childSignal);
 									break;
 								}
@@ -199,17 +191,90 @@ void CElaborator::elaborateSignalsFromEntity(CEntityInstance* entityInstance, in
 	}
 }
 
+void CElaborator::elaborateNetlistDrivers()
+{
+	/*
+	 * Add drivers to each element in netlist.
+	 *
+	 * Iterate through each CSignalInstantiation
+	 * 	Find drivers from architecture(s)
+	 * 	Find their CSignalInstantiation
+	 * 	Add to the drivers array to simplify future design analysers
+	 *
+	 * 	we may benefit from a filter before this that deals with signal renaming, eg 'wrap_clk <= clk'
+	 */
+	for(CSignalInstantiation& si : _netlist->getNets())
+	{
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signalInstance");
+		for(const CEntitySignalPair& esp : si.getDefinitions())
+		{
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signal: %s in entity(%p): %s", esp.getSignal()->getName().c_str(), esp.getEntityInstance(), esp.getEntityInstance()->getArchitecture()->getName().c_str());
+			std::vector<CSignal*> contributors = esp.getSignal()->getClockedContributors();
+			if(contributors.empty())
+			{
+				contributors = esp.getSignal()->getCombinatorialContributors();
+				CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "NON clocked");
+			}
+			else
+			{
+				CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Clocked");
+				if(si.getClock() != NULL)
+				{
+					CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Signal: '%s' in instance: '%s' of entity: '%s' appears to be driven in two or more different clocked processes",
+							esp.getSignal()->getName().c_str(),
+							esp.getEntityInstance()->getInstanceName().c_str(),
+							esp.getEntityInstance()->getArchitecture()->getName().c_str());
+					throw 1;
+				}
+				else
+				{
+					std::vector<CSignalInstantiation*> clockSignals = _netlist->findBySignal(esp.getEntityInstance(), esp.getSignal()->getClock());
+					if(clockSignals.size() != 1)
+					{
+						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Signal: '%s' in instance: '%s' of entity: '%s' cannot find clock signal used in process",
+								esp.getSignal()->getName().c_str(),
+								esp.getEntityInstance()->getInstanceName().c_str(),
+								esp.getEntityInstance()->getArchitecture()->getName().c_str());
+						throw 1;
+					}
+					si.setClock(clockSignals.front());
+				}
+			}
+
+			// use a set to remove duplicates (although there shouldn't be any...)
+			std::set<CSignalInstantiation*> elaboratedContributors;
+
+			// all contributors should be in the same entity (but may be ports)
+			for(CSignal* signal : contributors)
+			{
+				std::vector<CSignalInstantiation*> nodes = _netlist->findBySignal(esp.getEntityInstance(), signal);
+				elaboratedContributors.insert(nodes.begin(), nodes.end());
+			}
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "%zu direct drivers", elaboratedContributors.size());
+			for(CSignalInstantiation* esi : elaboratedContributors)
+			{
+				si.addDirectDriver(esi);
+				CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "\t%s", esi->generateUniqueIdentifier().c_str());
+			}
+		}
+	}
+}
+
 void CElaborator::printNetlist()
 {
 	for(const CSignalInstantiation& si : _netlist->getNets())
 	{
 		printf("Signal:\n");
-		for(const CEntitySignalPair& parentNetDefinition : si.getDefinitions())
+		for(const CEntitySignalPair& netDefinition : si.getDefinitions())
 		{
-			if(parentNetDefinition.getEntityInstance())
+			if(netDefinition.getEntityInstance())
 			{
-				printf("\t%70s (%20s) : %20s\n", parentNetDefinition.getEntityInstance()->getArchitecture()->getName().c_str(), parentNetDefinition.getEntityInstance()->getInstanceName().c_str(), parentNetDefinition.getSignal()->getName().c_str());
+				printf("\t%70s (%20s) : %20s - has %zu drivers\n", netDefinition.getEntityInstance()->getArchitecture()->getName().c_str(), netDefinition.getEntityInstance()->getInstanceName().c_str(), netDefinition.getSignal()->getName().c_str(), si.getDirectDrivers().size());
 			}
+		}
+		for(const CSignalInstantiation* driver : si.getDirectDrivers())
+		{
+			printf("\t\t%s\n", driver->generateUniqueIdentifier().c_str());
 		}
 	}
 }
@@ -221,6 +286,11 @@ void CElaborator::printSignalIfUnprinted(const std::string& signalName, bool& pr
 		printf("\tsignal: %s\n", signalName.c_str());
 		printed = true;
 	}
+}
+
+const CNetList* CElaborator::getNetlist() const
+{
+	return _netlist;
 }
 
 } /* namespace vhdl */

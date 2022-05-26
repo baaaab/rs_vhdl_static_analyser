@@ -154,6 +154,7 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 			"std_logic_vector",
 			"signed",
 			"unsigned",
+			"unsigned'",
 			"downto",
 			"else",
 			"then",
@@ -165,7 +166,8 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 			"xor",
 			"not",
 			"nand",
-			"nor"
+			"nor",
+			"others"
 	};
 
 	const char* delimiters = " ()+-&,*><;=";
@@ -247,7 +249,33 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 		}
 		else
 		{
-			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Unhandled statement contributor: '%s'", possibleContributor);
+			//this may be a record assignment, see if there is a dot and remove it
+			ptr = possibleContributor;
+			while(*ptr)
+			{
+				if(*ptr == '.')
+				{
+					*ptr = 0;
+					break;
+				}
+				ptr++;
+			}
+
+
+			for(CSignal& signal : _signals)
+			{
+				if(signal.getName() == possibleContributor)
+				{
+					contributors.push_back(&signal);
+					signalFound = true;
+					//CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Found contributor: '%s'", possibleContributor);
+					break;
+				}
+			}
+			if(!signalFound)
+			{
+				CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::WARN, "Unhandled statement contributor: '%s'", possibleContributor);
+			}
 		}
 	}
 

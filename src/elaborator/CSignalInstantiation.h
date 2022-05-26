@@ -18,10 +18,28 @@ public:
 	virtual ~CSignalInstantiation();
 
 	const std::vector<CEntitySignalPair>& getDefinitions() const;
+	const CSignalInstantiation* getClock();
+	const std::vector<CSignalInstantiation*>& getDirectDrivers() const;
+
 	void addDefinition(const CEntityInstance* entity, const CSignal* signal);
+	void addDirectDriver(CSignalInstantiation* signalInstance);
+	void setClock(const CSignalInstantiation* clockSignalInstance);
+
+	std::string generateUniqueIdentifier() const;
+
+	// is any definition userdefined (if there are multiple definitions one at least will be user defined)
+	bool isUserDefined() const;
+
+	bool isClocked() const;
 
 private:
 	std::vector<CEntitySignalPair> _definitions;
+
+	// these drivers may have their own drivers too
+	std::vector<CSignalInstantiation*> _directDrivers;
+
+	// may be NULL
+	const CSignalInstantiation* _clock;
 
 };
 
