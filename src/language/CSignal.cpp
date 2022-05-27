@@ -11,7 +11,6 @@ CSignal::CSignal(const char* name, const char* type, const char* synthFile, uint
 		_isOutput(false),
 		_isUserDefined(true),
 		_isClock(false),
-		_combinatorialContributors(),
 		_clock(nullptr)
 {
 	_synthDefinition.setFromFileAndline(synthFile, synthLine);
@@ -22,28 +21,21 @@ CSignal::~CSignal()
 
 }
 
-const std::vector<CSignal*>& CSignal::getClockedContributors() const
+const std::vector<CSignal*>& CSignal::getContributors() const
 {
-	return _clockedContributors;
+	return _contributors;
 }
 
 void CSignal::setClockedContributors(CSignal* clockSignal, const std::vector<CSignal*>& clockedContributors)
 {
 	_clock = clockSignal;
-	_clockedContributors = clockedContributors;
-	_combinatorialContributors.clear();
-}
-
-const std::vector<CSignal*>& CSignal::getCombinatorialContributors() const
-{
-	return _combinatorialContributors;
+	_contributors = clockedContributors;
 }
 
 void CSignal::setCombinatorialContributors(const std::vector<CSignal*>& combinatorialContributors)
 {
-	_combinatorialContributors = combinatorialContributors;
+	_contributors = combinatorialContributors;
 	_clock = NULL;
-	_clockedContributors.clear();
 }
 
 bool CSignal::isInput() const

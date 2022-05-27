@@ -15,10 +15,8 @@ public:
 	CSignal(const char* name, const char* type, const char* synthFile, uint32_t synthline);
 	virtual ~CSignal();
 
-	const std::vector<CSignal*>& getClockedContributors() const;
+	const std::vector<CSignal*>& getContributors() const;
 	void setClockedContributors(CSignal* clockSignal, const std::vector<CSignal*>& clockedContributors);
-
-	const std::vector<CSignal*>& getCombinatorialContributors() const;
 	void setCombinatorialContributors(const std::vector<CSignal*>& combinatorialContributors);
 
 	bool isInput() const;
@@ -72,8 +70,7 @@ private:
 
 	bool _isClock;
 
-	std::vector<CSignal*> _combinatorialContributors;
-	std::vector<CSignal*> _clockedContributors;
+	std::vector<CSignal*> _contributors;
 	CSignal*              _clock;
 
 	std::string _assignmentStatementRHS;

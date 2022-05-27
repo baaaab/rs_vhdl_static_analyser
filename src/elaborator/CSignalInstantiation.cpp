@@ -90,7 +90,7 @@ bool CSignalInstantiation::isClocked() const
 {
 	for(const CEntitySignalPair& definition : _definitions)
 	{
-		if(!definition.getSignal()->getClockedContributors().empty())
+		if(definition.getSignal()->getClock())
 		{
 			return true;
 		}

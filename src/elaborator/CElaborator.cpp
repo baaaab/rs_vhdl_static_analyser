@@ -45,7 +45,7 @@ void CElaborator::printUnassignedSignals()
 			bool printed = false;
 			if(signal->getClock() == NULL)
 			{
-				if(signal->getCombinatorialContributors().empty())
+				if(signal->getContributors().empty())
 				{
 					if(!signal->isPort())
 					{
@@ -54,7 +54,7 @@ void CElaborator::printUnassignedSignals()
 					}
 				}
 			}
-			else if(signal->getClockedContributors().empty())
+			else if(signal->getContributors().empty())
 			{
 				printSignalIfUnprinted(signal->getName(), printed);
 				printf("\t\tNever assigned (clocked)\n");
@@ -207,10 +207,9 @@ void CElaborator::elaborateNetlistDrivers()
 		for(const CEntitySignalPair& esp : si.getDefinitions())
 		{
 			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Analysing signal: %s in entity: %s with assignment: '%s'", esp.getSignal()->getName().c_str(), esp.getEntityInstance()->getArchitecture()->getName().c_str(), esp.getSignal()->getAssignmentStatementRhs().c_str());
-			std::vector<CSignal*> contributors = esp.getSignal()->getClockedContributors();
-			if(contributors.empty())
+			const std::vector<CSignal*>& contributors = esp.getSignal()->getContributors();
+			if(esp.getSignal()->getClock() == NULL)
 			{
-				contributors = esp.getSignal()->getCombinatorialContributors();
 				CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "NON clocked");
 			}
 			else

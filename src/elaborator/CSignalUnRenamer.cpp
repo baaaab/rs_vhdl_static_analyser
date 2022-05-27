@@ -57,10 +57,10 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 		//CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Signal: '%s'", signal->getName().c_str());
 		if (!signal->getAssignmentStatementRhs().empty())
 		{
-			if (signal->getClockedContributors().empty())
+			if (signal->getClock() == NULL)
 			{
 				// combinatorial
-				const std::vector<CSignal*>& contributors = signal->getCombinatorialContributors();
+				const std::vector<CSignal*>& contributors = signal->getContributors();
 
 				//CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "if (!signal->isUserDefined() && !signal->getAssignmentStatementRhs().empty()) Signal: '%s'", signal->getName().c_str());
 
@@ -106,7 +106,7 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 									//replace references to signal with unRenamed in contributors or clock
 									if(otherSignal->getClock())
 									{
-										std::vector<CSignal*> clockedContributors = otherSignal->getClockedContributors();
+										std::vector<CSignal*> clockedContributors = otherSignal->getContributors();
 										CSignal* clockSignal = otherSignal->getClock();
 										if(clockSignal == signal)
 										{
@@ -117,7 +117,7 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 									}
 									else
 									{
-										std::vector<CSignal*> combinatorialContributors = otherSignal->getCombinatorialContributors();
+										std::vector<CSignal*> combinatorialContributors = otherSignal->getContributors();
 										replaceElementInVector(combinatorialContributors, signalToReplace, unRenamed);
 										otherSignal->setCombinatorialContributors(combinatorialContributors);
 									}
@@ -129,11 +129,11 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 								// there is probably a better way to write this
 								if(signalToReplace->getClock() != NULL && unRenamed->getClock() == NULL)
 								{
-									unRenamed->setClockedContributors(signalToReplace->getClock(), signalToReplace->getClockedContributors());
+									unRenamed->setClockedContributors(signalToReplace->getClock(), signalToReplace->getContributors());
 								}
 								else if(signalToReplace->getClock() == NULL && unRenamed->getClock() == NULL)
 								{
-									unRenamed->setCombinatorialContributors(signalToReplace->getCombinatorialContributors());
+									unRenamed->setCombinatorialContributors(signalToReplace->getContributors());
 								}
 							}
 
