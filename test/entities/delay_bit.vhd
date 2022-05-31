@@ -23,7 +23,11 @@ begin
   process (clk) begin
     if rising_edge(clk) then
       if clken = '1' then
-        shreg <= shreg(DELAY - 2 downto 0) & d;
+        --shreg <= shreg(DELAY - 2 downto 0) & d;
+        for i in 0 to DELAY-2 loop
+          shreg(i+1) <= shreg(i);
+        end loop;
+        shreg(0) <= d;
       end if;
     end if;
   end process;

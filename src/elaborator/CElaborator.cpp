@@ -153,6 +153,10 @@ void CElaborator::elaborateSignalsFromEntity(CEntityInstance* entityInstance, in
 		{
 			CSignalInstantiation si;
 			si.addDefinition(entityInstance, signal);
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Adding net signal: %s, entity: %s, instance: %s",
+					signal->getName().c_str(),
+					entityInstance->getArchitecture()->getName().c_str(),
+					entityInstance->getInstanceName().c_str());
 			_netlist->addNet(si);
 		}
 	}

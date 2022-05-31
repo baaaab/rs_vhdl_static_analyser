@@ -53,6 +53,17 @@ public:
 	const std::string& getAssignmentStatementRhs() const;
 	void setAssignmentStatementRhs(const char* assignmentStatementRhs);
 
+	bool isUnconcatenated() const;
+	void setIsUnconcatenated(bool isUnconcatenated);
+
+	const std::string& getUnconcatenatedName() const;
+	void setUnconcatenatedName(const std::string& unconcatenatedName);
+
+	int getUnconcatenationIndex() const;
+	void setUnconcatenationIndex(int unconcatenationIndex);
+
+	void dump();
+
 private:
 	std::string _name;
 	std::string _type;
@@ -74,6 +85,11 @@ private:
 	CSignal*              _clock;
 
 	std::string _assignmentStatementRHS;
+
+	bool _isUnconcatenated;
+	int _unconcatenationIndex;
+	std::string _unconcatenatedName;
+
 };
 
 } /* namespace vhdl */

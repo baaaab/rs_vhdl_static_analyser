@@ -90,11 +90,11 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 
 					if(signalToReplace && unRenamed)
 					{
-						/*CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "if (!isClocked && contributors.size() == 1) Signal: '%s' looks like a rename of: '%s', checking assignments: '%s' vs '%s' ",
+						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "if (!isClocked && contributors.size() == 1) Signal: '%s' looks like a rename of: '%s', checking assignments: '%s' vs '%s' ",
 								signalToReplace->getName().c_str(), unRenamed->getName().c_str(),
 								assignmentRhsString.c_str(),
 								signalName.c_str()
-								);*/
+								);
 						if (assignmentRhsString == signalName)
 						{
 							CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO, "Signal: '%s' looks like a rename of: '%s', replacing it", signalToReplace->getName().c_str(), unRenamed->getName().c_str());
@@ -103,6 +103,21 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 							{
 								if (otherSignal != signalToReplace)
 								{
+									if(!otherSignal->getAssignmentStatementRhs().empty())
+									{
+										std::string rhs = otherSignal->getAssignmentStatementRhs();
+										std::string findStr = signalToReplace->getName();
+										std::string replaceStr = unRenamed->getName();
+										/*printf("Signal: %s, replacing %s with %s in %s\n",
+												otherSignal->getName().c_str(),
+												findStr.c_str(),
+												replaceStr.c_str(),
+												rhs.c_str());*/
+
+										RhsAssignmentStdStringReplace(rhs, findStr, replaceStr);
+										otherSignal->setAssignmentStatementRhs(rhs.c_str());
+									}
+
 									//replace references to signal with unRenamed in contributors or clock
 									if(otherSignal->getClock())
 									{
@@ -112,13 +127,13 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 										{
 											clockSignal = unRenamed;
 										}
-										replaceElementInVector(clockedContributors, signalToReplace, unRenamed);
+										ReplaceElementInVector(clockedContributors, signalToReplace, unRenamed);
 										otherSignal->setClockedContributors(clockSignal, clockedContributors);
 									}
 									else
 									{
 										std::vector<CSignal*> combinatorialContributors = otherSignal->getContributors();
-										replaceElementInVector(combinatorialContributors, signalToReplace, unRenamed);
+										ReplaceElementInVector(combinatorialContributors, signalToReplace, unRenamed);
 										otherSignal->setCombinatorialContributors(combinatorialContributors);
 									}
 								}
@@ -166,7 +181,7 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 	}
 }
 
-void CSignalUnRenamer::replaceElementInVector(std::vector<CSignal*>& haystack, CSignal* needle, CSignal* replace)
+void CSignalUnRenamer::ReplaceElementInVector(std::vector<CSignal*>& haystack, CSignal* needle, CSignal* replace)
 {
 	std::vector<CSignal*>::iterator needleFindResult = std::find(haystack.begin(), haystack.end(), needle);
 	std::vector<CSignal*>::iterator replaceFindResult = std::find(haystack.begin(), haystack.end(), replace);
@@ -181,6 +196,43 @@ void CSignalUnRenamer::replaceElementInVector(std::vector<CSignal*>& haystack, C
 			*needleFindResult = replace;
 		}
 	}
+}
+
+bool CSignalUnRenamer::RhsAssignmentStdStringReplace(std::string& str, const std::string& from, const std::string& to)
+{
+	/*
+	 * we want to do whole word replacement to avoid hitting substrings so try to append spaces on both/either side
+	 */
+
+	std::string findMod = " " + from + " ";
+	std::string replaceMod = " " + to + " ";
+
+	size_t startPos = str.find(findMod);
+	if (startPos == std::string::npos)
+	{
+		findMod = from + " ";
+		replaceMod = to + " ";
+		startPos = str.find(findMod);
+		if (startPos == std::string::npos)
+		{
+			findMod = " " + from;
+			replaceMod = " " + to;
+			startPos = str.find(findMod);
+			if (startPos == std::string::npos)
+			{
+				findMod = from;
+				replaceMod = to;
+				startPos = str.find(findMod);
+			}
+		}
+	}
+
+	if (startPos == std::string::npos)
+	{
+		return false;
+	}
+	str.replace(startPos, findMod.length(), replaceMod);
+	return true;
 }
 
 } /* namespace vhdl */

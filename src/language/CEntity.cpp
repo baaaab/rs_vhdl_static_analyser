@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "../elaborator/CSignalUnRenamer.h"
+#include "../elaborator/CUnconcatenator.h"
 #include "../output/CLogger.h"
 #include "../output/ELogLevel.h"
 
@@ -297,6 +298,12 @@ const std::vector<CPortMap>& CEntity::getChildEntityPortMaps() const
 
 void CEntity::simplify()
 {
+	// order is important, needs some more thought...
+
+	CUnconcatenator unconcatenator;
+	unconcatenator.simplifyEntityArchitecture(_signals, _entityInstances);
+
+	// unrenamer breaks RHS assignment strings that unconcatenatore needs.
 	CSignalUnRenamer unrenamer;
 	unrenamer.simplifyEntityArchitecture(_signals, _entityInstances);
 }

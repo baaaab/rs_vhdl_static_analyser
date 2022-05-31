@@ -34,30 +34,36 @@ end entity delay_bit_4;
 
 architecture rtl of delay_bit_4 is
   signal shreg : std_logic_vector (3 downto 0);
-  signal n295_o : std_logic_vector (2 downto 0);
-  signal n296_o : std_logic_vector (3 downto 0);
-  signal n300_o : std_logic_vector (3 downto 0);
-  signal n301_q : std_logic_vector (3 downto 0);
-  signal n302_o : std_logic;
+  signal n295_o : std_logic;
+  signal n296_o : std_logic;
+  signal n297_o : std_logic;
+  signal n298_o : std_logic_vector (3 downto 0);
+  signal n302_o : std_logic_vector (3 downto 0);
+  signal n303_q : std_logic_vector (3 downto 0);
+  signal n304_o : std_logic;
 begin
-  q <= n302_o;
+  q <= n304_o;
   -- entities/delay_bit.vhd:20:10
-  shreg <= n301_q; -- (signal)
-  -- entities/delay_bit.vhd:26:23
-  n295_o <= shreg (2 downto 0);
-  -- entities/delay_bit.vhd:26:44
-  n296_o <= n295_o & d;
+  shreg <= n303_q; -- (signal)
+  -- entities/delay_bit.vhd:28:30
+  n295_o <= shreg (0);
+  -- entities/delay_bit.vhd:28:30
+  n296_o <= shreg (1);
+  -- entities/delay_bit.vhd:28:30
+  n297_o <= shreg (2);
+  -- entities/async_dpram.vhd:56:5
+  n298_o <= n297_o & n296_o & n295_o & d;
   -- entities/delay_bit.vhd:24:5
-  n300_o <= shreg when clken = '0' else n296_o;
+  n302_o <= shreg when clken = '0' else n298_o;
   -- entities/delay_bit.vhd:24:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n301_q <= n300_o;
+      n303_q <= n302_o;
     end if;
   end process;
-  -- entities/delay_bit.vhd:31:13
-  n302_o <= shreg (3);
+  -- entities/delay_bit.vhd:35:13
+  n304_o <= shreg (3);
 end rtl;
 
 library ieee;

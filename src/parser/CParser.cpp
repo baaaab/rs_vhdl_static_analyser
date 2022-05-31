@@ -431,6 +431,16 @@ void CParser::parseSignals(std::vector<std::string>::iterator& itr, CEntity* ent
 				colon = strtok_r(NULL, " ", &state);
 			}
 			char* type = strtok_r(NULL, "", &state);
+			char* typePtr = type;
+			while(*typePtr)
+			{
+				if(*typePtr == ';')
+				{
+					*typePtr = 0;
+					break;
+				}
+				++typePtr;
+			}
 
 			if(signalName == NULL || colon == NULL || type == NULL)
 			{

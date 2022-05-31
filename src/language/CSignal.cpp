@@ -1,5 +1,10 @@
 #include "CSignal.h"
 
+#include <cstdio>
+
+#include "../output/CLogger.h"
+#include "../output/ELogLevel.h"
+
 namespace vhdl
 {
 
@@ -11,7 +16,9 @@ CSignal::CSignal(const char* name, const char* type, const char* synthFile, uint
 		_isOutput(false),
 		_isUserDefined(true),
 		_isClock(false),
-		_clock(nullptr)
+		_clock(nullptr),
+		_isUnconcatenated(false),
+		_unconcatenationIndex(0)
 {
 	_synthDefinition.setFromFileAndline(synthFile, synthLine);
 }
@@ -146,6 +153,58 @@ const std::string& CSignal::getAssignmentStatementRhs() const
 void CSignal::setAssignmentStatementRhs(const char* assignmentStatementRhs)
 {
 	_assignmentStatementRHS = assignmentStatementRhs;
+}
+
+bool CSignal::isUnconcatenated() const
+{
+	return _isUnconcatenated;
+}
+
+void CSignal::setIsUnconcatenated(bool isUnconcatenated)
+{
+	_isUnconcatenated = isUnconcatenated;
+}
+
+const std::string& CSignal::getUnconcatenatedName() const
+{
+	return _unconcatenatedName;
+}
+
+void CSignal::setUnconcatenatedName(const std::string& unconcatenatedName)
+{
+	_unconcatenatedName = unconcatenatedName;
+}
+
+int CSignal::getUnconcatenationIndex() const
+{
+	return _unconcatenationIndex;
+}
+
+void CSignal::setUnconcatenationIndex(int unconcatenationIndex)
+{
+	_unconcatenationIndex = unconcatenationIndex;
+}
+
+void CSignal::dump()
+{
+	CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Signal: %s", _name.c_str());
+	printf("\ttype: %s\n", _type.c_str());
+	printf("\t_isPort: %d\n", _isPort);
+	printf("\t_isInput: %d\n", _isInput);
+	printf("\t_isOutput: %d\n", _isOutput);
+	printf("\t_isUserDefined: %d\n", _isUserDefined);
+	printf("\t_isClock: %d\n", _isClock);
+
+	printf("\tClock: %s\n", _clock ? _clock->getName().c_str() : NULL);
+
+	printf("\tRHS assignment: %s\n",_assignmentStatementRHS.c_str());
+
+	printf("\tContributors:\n\t\t");
+	for(const CSignal* contributor : _contributors)
+	{
+		printf("%s, ",contributor->getName().c_str());
+	}
+	printf("\n");
 }
 
 } /* namespace vhdl */

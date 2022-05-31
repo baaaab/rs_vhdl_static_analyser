@@ -18,8 +18,8 @@ public:
 
 	void simplifyEntityArchitecture(std::vector<CSignal*>& signals, std::vector<CPortMap>& entityInstances);
 
-private:
-	void replaceElementInVector(std::vector<CSignal*>& haystack, CSignal* needle, CSignal* replace);
+	static void ReplaceElementInVector(std::vector<CSignal*>& haystack, CSignal* needle, CSignal* replace);
+	static bool RhsAssignmentStdStringReplace(std::string& str, const std::string& from, const std::string& to);
 };
 
 } /* namespace vhdl */
