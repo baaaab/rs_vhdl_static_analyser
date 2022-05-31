@@ -1,5 +1,7 @@
 #include "CSignalInstantiation.h"
 
+#include <utility>
+
 #include "../language/CSignal.h"
 #include "CEntityInstance.h"
 
@@ -22,7 +24,7 @@ const std::vector<CEntitySignalPair>& CSignalInstantiation::getDefinitions() con
 	return _definitions;
 }
 
-const CSignalInstantiation* CSignalInstantiation::getClock()
+const CSignalInstantiation* CSignalInstantiation::getClock() const
 {
 	return _clock;
 }
@@ -96,6 +98,97 @@ bool CSignalInstantiation::isClocked() const
 		}
 	}
 	return false;
+}
+
+std::set<int> CSignalInstantiation::calculateNumberofRegisterStages() const
+{
+	std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>> followedPaths;
+	std::set<const CSignalInstantiation*> clockCheckList;
+
+	// we need to figure out what clock domain we are on
+	const CSignalInstantiation* clock = GetDriverClockRecursive(this, clockCheckList);
+
+	// loop through all non-self drivers, add one for each clocked, do not follow the same path twice
+	std::set<int> allPathLengths = CountNumberOfRegisterStagesToInput(this, clock, followedPaths);
+
+	return allPathLengths;
+}
+
+std::set<int> CSignalInstantiation::CountNumberOfRegisterStagesToInput(const CSignalInstantiation* signal, const CSignalInstantiation* clock,
+    std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>>& followedPaths)
+{
+	int numRegisterStages = 0;
+	if(signal->isClocked())
+	{
+		if(signal->getClock() != clock)
+		{
+			// wrong clock, ignore this path
+			return {};
+		}
+		numRegisterStages = 1;
+	}
+
+	const CSignal* firstDefSignal = signal->getDefinitions()[0].getSignal();
+
+	if(signal->getDirectDrivers().empty() && firstDefSignal->isPort() && firstDefSignal->isInput())
+	{
+		return {numRegisterStages};
+	}
+
+	std::set<int> pathLengths;
+
+	for(const CSignalInstantiation* driver : signal->getDirectDrivers())
+	{
+		bool ignoreDriver = false;
+		for(const CEntitySignalPair& esp : driver->getDefinitions())
+		{
+			if(esp.getSignal()->getName() == "reset" || esp.getSignal()->getName() == "sreset")
+			{
+				ignoreDriver = true;
+			}
+		}
+		if(!ignoreDriver)
+		{
+			std::pair<const CSignalInstantiation*, const CSignalInstantiation*> path(signal, driver);
+			if(followedPaths.count(path) == 0)
+			{
+				followedPaths.insert(path);
+				std::set<int> derivativePathLength = CountNumberOfRegisterStagesToInput(driver, clock, followedPaths);
+				pathLengths.insert(derivativePathLength.begin(), derivativePathLength.end());
+			}
+		}
+	}
+
+	std::set<int> copy;
+
+	for(const int& i : pathLengths)
+	{
+		copy.insert(i+numRegisterStages);
+	}
+
+	return copy;
+}
+
+const CSignalInstantiation* CSignalInstantiation::GetDriverClockRecursive(const CSignalInstantiation* signal, std::set<const CSignalInstantiation*>& checkedSignals)
+{
+	if(signal->getClock())
+	{
+		return signal->getClock();
+	}
+
+	for(CSignalInstantiation* driver : signal->getDirectDrivers())
+	{
+		if(checkedSignals.count(driver) == 0)
+		{
+			checkedSignals.insert(driver);
+			const CSignalInstantiation* driverClock = GetDriverClockRecursive(driver,  checkedSignals);
+			if(driverClock)
+			{
+				return driverClock;
+			}
+		}
+	}
+	return NULL;
 }
 
 } /* namespace vhdl */

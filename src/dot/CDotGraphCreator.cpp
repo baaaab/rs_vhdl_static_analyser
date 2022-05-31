@@ -4,11 +4,7 @@
 #include <iterator>
 #include <string>
 
-#include "../elaborator/CEntityInstance.h"
-#include "../elaborator/CEntitySignalPair.h"
 #include "../elaborator/CNetList.h"
-#include "../language/CEntity.h"
-#include "../language/CSignal.h"
 #include "../output/CLogger.h"
 #include "../output/ELogLevel.h"
 
@@ -33,6 +29,7 @@ CDotGraphCreator::~CDotGraphCreator()
 void CDotGraphCreator::createDotGraph(const CNetList* netlist)
 {
 	fprintf(_fh, "digraph bob{\n");
+	fprintf(_fh, "\trankdir = TB;\n");
 
 	std::vector<const CSignalInstantiation*> definedNodes;
 
@@ -48,6 +45,22 @@ void CDotGraphCreator::createDotGraph(const CNetList* netlist)
 		}
 	}
 
+	for(auto& entry : _netRanks)
+	{
+		if(entry.first != 0)
+		{
+			fprintf(_fh, "\t{ rank=same; ");
+			for(const CSignalInstantiation* si : entry.second)
+			{
+				if(si->isClocked())
+				{
+					fprintf(_fh, "\"%s\"; ", si->generateUniqueIdentifier().c_str());
+				}
+			}
+			fprintf(_fh, "} # %d\n", entry.first);
+		}
+	}
+
 	fprintf(_fh, "}\n");
 }
 
@@ -55,6 +68,15 @@ void CDotGraphCreator::createDriverDefinitionsRecursive(int depth, const CSignal
 {
 	// only need to go over it once
 	recursedNodes.push_back(driverToElaborate);
+
+	std::set<int> allRanks = drivenSignal->calculateNumberofRegisterStages();
+	if(allRanks.empty())
+	{
+		allRanks.insert(0);
+	}
+	int rank = *std::min_element(allRanks.begin(), allRanks.end());
+
+	_netRanks[rank].insert(drivenSignal);
 
 	if(depth != 0 && (!_userDefinedSignalsOnly || driverToElaborate->isUserDefined()))
 	{
@@ -67,14 +89,16 @@ void CDotGraphCreator::createDriverDefinitionsRecursive(int depth, const CSignal
 		if(needToDefineDriver)
 		{
 			const char* shape = driverToElaborate->isClocked() ? "rect" : "ellipse";
-			fprintf(_fh, "\t\"%s\" [shape=%s];\n", driverName.c_str(), shape);
+			const char* colour = driverToElaborate->isClocked() ? "blue" : "red";
+			fprintf(_fh, "\t\"%s\" [shape=%s,color=%s];\n", driverName.c_str(), shape, colour);
 			definedNodes.push_back(driverToElaborate);
 		}
 
 		if(needToDefineDriven)
 		{
 			const char* shape = drivenSignal->isClocked() ? "rect" : "ellipse";
-			fprintf(_fh, "\t\"%s\" [shape=%s];\n", drivenName.c_str(), shape);
+			const char* colour = drivenSignal->isClocked() ? "blue" : "red";
+			fprintf(_fh, "\t\"%s\" [shape=%s,color=%s];\n", drivenName.c_str(), shape, colour);
 			definedNodes.push_back(drivenSignal);
 		}
 

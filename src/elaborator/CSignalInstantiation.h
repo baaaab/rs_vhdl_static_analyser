@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 #include "CEntitySignalPair.h"
 
@@ -18,7 +19,7 @@ public:
 	virtual ~CSignalInstantiation();
 
 	const std::vector<CEntitySignalPair>& getDefinitions() const;
-	const CSignalInstantiation* getClock();
+	const CSignalInstantiation* getClock() const;
 	const std::vector<CSignalInstantiation*>& getDirectDrivers() const;
 
 	void addDefinition(const CEntityInstance* entity, const CSignal* signal);
@@ -32,6 +33,11 @@ public:
 
 	bool isClocked() const;
 
+	std::set<int> calculateNumberofRegisterStages() const;
+
+	static std::set<int> CountNumberOfRegisterStagesToInput(const CSignalInstantiation* signal, const CSignalInstantiation* clock,
+	    std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>>& followedPaths);
+
 private:
 	std::vector<CEntitySignalPair> _definitions;
 
@@ -40,6 +46,8 @@ private:
 
 	// may be NULL
 	const CSignalInstantiation* _clock;
+
+	static const CSignalInstantiation* GetDriverClockRecursive(const CSignalInstantiation* signal, std::set<const CSignalInstantiation*>& checkedSignals);
 
 };
 

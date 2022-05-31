@@ -2,6 +2,8 @@
 #define SRC_DOT_CDOTGRAPHCREATOR_H_
 
 #include <cstdio>
+#include <map>
+#include <set>
 #include <vector>
 
 #include "../elaborator/CSignalInstantiation.h"
@@ -24,6 +26,7 @@ public:
 private:
 	FILE* _fh;
 	bool _userDefinedSignalsOnly;
+	std::map<int, std::set<const CSignalInstantiation*>> _netRanks;
 
 	void createDriverDefinitionsRecursive(int depth, const CSignalInstantiation* drivenSignal, const CSignalInstantiation* driverToElaborate, std::vector<const CSignalInstantiation*>& definedNodes, std::vector<const CSignalInstantiation*> recursedNodes);
 };
