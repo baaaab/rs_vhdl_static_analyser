@@ -119,10 +119,11 @@ void CDotGraphCreator::createDriverDefinitionsRecursive(int depth, const CSignal
 
 		for(const CSignalInstantiation* nextDriver : driverToElaborate->getDirectDrivers())
 		{
+			const CSignalInstantiation* nextDrivenSignal = (_userDefinedSignalsOnly && driverToElaborate->isUserDefined()) ? driverToElaborate : drivenSignal;
 			bool alreadyRecursed = std::find(recursedNodes.begin(), recursedNodes.end(), nextDriver) != recursedNodes.end();
 			if(!alreadyRecursed || (nextDriver == drivenSignal && depth < 2))
 			{
-				createDriverDefinitionsRecursive(depth, drivenSignal, nextDriver, definedNodes, recursedNodes);
+				createDriverDefinitionsRecursive(depth, nextDrivenSignal, nextDriver, definedNodes, recursedNodes);
 			}
 		}
 	}
