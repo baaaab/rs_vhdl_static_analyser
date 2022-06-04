@@ -14,11 +14,13 @@ entity delay_bit is
     q     : out std_logic
   );
 
-end delay_bit;
+end entity;
 
 architecture archi of delay_bit is
   signal shreg : std_logic_vector(DELAY - 1 downto 0);
 begin
+
+  assert DELAY > 0 report "DELAY must be greater than 0" severity error;
 
   process (clk) begin
     if rising_edge(clk) then

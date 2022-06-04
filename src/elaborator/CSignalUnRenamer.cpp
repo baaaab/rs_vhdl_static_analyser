@@ -54,15 +54,12 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 	{
 		bool signalErased = false;
 		CSignal* signal = *itr;
-		//CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Signal: '%s'", signal->getName().c_str());
 		if (!signal->getAssignmentStatementRhs().empty())
 		{
 			if (signal->getClock() == NULL)
 			{
 				// combinatorial
 				const std::vector<CSignal*>& contributors = signal->getContributors();
-
-				//CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "if (!signal->isUserDefined() && !signal->getAssignmentStatementRhs().empty()) Signal: '%s'", signal->getName().c_str());
 
 				if (contributors.size() == 1)
 				{

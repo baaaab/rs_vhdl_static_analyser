@@ -222,6 +222,7 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 
 		char startQuote = 0;
 		bool allNumeric = true;
+		bool allX = true;
 		char* ptr = possibleContributor;
 		if(*ptr == '\'' || *ptr == '"')
 		{
@@ -234,12 +235,16 @@ std::vector<CSignal*> CEntity::getContributorsFromStatement(const char* statemen
 			{
 				allNumeric = false;
 			}
+			if(*ptr != 'X')
+			{
+				allX = false;
+			}
 			ptr++;
 		}
-		if(*ptr == startQuote && allNumeric)
+		if(*ptr == startQuote && (allNumeric || allX))
 		{
 			// this is a numeric constant, skip it
-			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Skipping constant: '%s'", possibleContributor);
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::WARN, "Skipping constant: '%s'", possibleContributor);
 		}
 		else
 		{

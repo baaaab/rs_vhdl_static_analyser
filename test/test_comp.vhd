@@ -153,7 +153,7 @@ begin
     if rising_edge(clk) then
       ram_rd_addr     <= std_logic_vector(unsigned(ram_wr_addr) - to_unsigned(400, ram_rd_addr'length));
 
-      ram_rd_valid    <= ram_wr_en;
+      ram_rd_valid    <= abs_valid;
       ram_rd_valid_r  <= ram_rd_valid;
     end if;
   end process;
@@ -214,6 +214,7 @@ begin
             when x"01" =>
               reg_rd_data <= threshold_reg;
             when others =>
+              assert false report "Invalid reg address" severity error;
               reg_rd_data <= (others => '-');
           end case;
         else

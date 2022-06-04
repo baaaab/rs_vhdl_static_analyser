@@ -4,7 +4,7 @@
 #include <cstdio>
 #include <map>
 #include <set>
-#include <vector>
+#include <set>
 
 #include "../elaborator/CSignalInstantiation.h"
 
@@ -15,7 +15,7 @@ class CNetList;
 class CDotGraphCreator
 {
 public:
-	CDotGraphCreator(const char* outputFileName);
+	CDotGraphCreator(const char* outputFileName, const std::vector<std::string>& signalNamesToIgnore);
 	virtual ~CDotGraphCreator();
 
 	void createDotGraph(const CNetList* netlist);
@@ -28,7 +28,9 @@ private:
 	bool _userDefinedSignalsOnly;
 	std::map<int, std::set<const CSignalInstantiation*>> _netRanks;
 
-	void createDriverDefinitionsRecursive(int depth, const CSignalInstantiation* drivenSignal, const CSignalInstantiation* driverToElaborate, std::vector<const CSignalInstantiation*>& definedNodes, std::vector<const CSignalInstantiation*> recursedNodes);
+	std::vector<std::string> _signalNamesToIgnore;
+
+	void createDriverDefinitionsRecursive(int depth, const CSignalInstantiation* drivenSignal, const CSignalInstantiation* driverToElaborate, std::set<const CSignalInstantiation*>& definedNodes, std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>>& definedPaths, std::set<const CSignalInstantiation*>& recursedNodes);
 };
 
 } /* namespace vhdl */

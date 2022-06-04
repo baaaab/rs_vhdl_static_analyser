@@ -28,7 +28,9 @@ int main(int argc, char** argv)
 	elaborator.elaborateSignalsFromPath("");
 	//elaborator.printNetlist();
 
-	vhdl::CDotGraphCreator graphCreator("bob.dot");
+	std::vector<std::string> signalNamesToIgnore({"reset", "sreset"});
+
+	vhdl::CDotGraphCreator graphCreator("bob.dot", signalNamesToIgnore);
 	graphCreator.setUserDefinedSignalsOnly(true);
 	graphCreator.createDotGraph(elaborator.getNetlist());
 

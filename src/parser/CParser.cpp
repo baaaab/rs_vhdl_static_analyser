@@ -286,11 +286,12 @@ void CParser::parseEntity(std::vector<std::string>::iterator& itr)
 	}
 
 	// end entity
-	char endEntityLine[256];
-	snprintf(endEntityLine, sizeof(endEntityLine), "end %s;", entityName);
-	char endEntityLineAlt[256];
-	snprintf(endEntityLineAlt, sizeof(endEntityLineAlt), "end entity %s;", entityName);
-	if(strcmp(endEntityLine, itr->c_str()) != 0 && strcmp(endEntityLineAlt, itr->c_str()) != 0)
+	const char* endEntityLine = "end entity;";
+	char endEntityNamedLine[300];
+	snprintf(endEntityNamedLine, sizeof(endEntityNamedLine), "end %s;", entityName);
+	char endEntityNamedLineAlt[300];
+	snprintf(endEntityNamedLineAlt, sizeof(endEntityNamedLineAlt), "end entity %s;", entityName);
+	if(strcmp(endEntityLine, itr->c_str()) != 0 && strcmp(endEntityNamedLine, itr->c_str()) != 0 && strcmp(endEntityNamedLineAlt, itr->c_str()) != 0)
 	{
 		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Parse Error: Expected close of entity");
 		error(ELogLevel::FATAL, itr);
@@ -487,6 +488,10 @@ void CParser::parseSignals(std::vector<std::string>::iterator& itr, CEntity* ent
 			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "%s is %s", subTypeName, type);
 
 			entity->addSubType(subTypeName, type, _sourceFileName.c_str(), getLineNumberFromIterator(itr));
+		}
+		else if(strcmp(lineType, "--") == 0)
+		{
+			// skip comment
 		}
 		else
 		{
@@ -767,7 +772,7 @@ void CParser::parseProcess(std::vector<std::string>::iterator& itr, CEntity* ent
 		const char* prefix = "if rising_edge (";
 		if(strstr(ptr, prefix) != ptr)
 		{
-			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Parse Error: Expected 'if rising_edge(' in process");
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Code Error: You have a mix of synchronous and asynchronuous statements in a process, this is a bad idea, go fix it!");
 			error(ELogLevel::FATAL, itr);
 		}
 
@@ -995,9 +1000,31 @@ void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntit
 	char* copy = strdup(ptr);
 
 	char* state = NULL;
+
 	char* instanceName = strtok_r(copy, " ", &state);
 	char* colon = strtok_r(NULL, " ", &state);
 	char* maybeEntity = strtok_r(NULL, " ", &state);
+
+	if(instanceName && colon && maybeEntity && instanceName[strlen(instanceName)-1] == ':' && strcmp(colon, "postponed") == 0 && strcmp(maybeEntity, "assert") == 0)
+	{
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Skipping assertion");
+		free(copy);
+		++itr;
+
+		// there may be a comment at the end, skip it
+		ptr = itr->c_str();
+		while(*ptr == ' ' || *ptr == '\t')
+		{
+			ptr++;
+		}
+		if(ptr[0] == '-' && ptr[1] == '-')
+		{
+			++itr;
+		}
+
+		return;
+	}
+
 	if(instanceName == NULL || colon == NULL || strcmp(colon, ":") != 0 || maybeEntity == NULL)
 	{
 		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Parse Error: could not parse entity instantiation");

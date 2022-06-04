@@ -21,6 +21,8 @@ architecture archi of delay_vector is
   signal shreg : array_t;
 begin
 
+  assert DELAY > 0 report "DELAY must be greater than 0" severity error;
+
   process (clk) begin
     if rising_edge(clk) then
       if clken = '1' then
