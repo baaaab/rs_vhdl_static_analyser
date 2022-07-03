@@ -51,7 +51,6 @@ begin
   n337_o <= shreg (1);
   -- entities/delay_bit.vhd:30:30
   n338_o <= shreg (2);
-  -- entities/async_dpram.vhd:56:5
   n339_o <= n338_o & n337_o & n336_o & d;
   -- entities/delay_bit.vhd:26:5
   n343_o <= shreg when clken = '0' else n339_o;
@@ -97,7 +96,7 @@ begin
   n323_o <= shreg (1);
   -- entities/delay_vector.vhd:30:30
   n324_o <= shreg (2);
-  -- entities/async_dpram.vhd:45:5
+  -- entities/async_dpram.vhd:56:19
   n325_o <= n324_o & n323_o & n322_o & d;
   -- entities/delay_vector.vhd:27:5
   n329_o <= shreg when clken = '0' else n325_o;
@@ -120,8 +119,6 @@ entity async_dpram_9_33_bf8b4530d8d246dd74ac53a13471bba17941dff7 is
   port (
     clka : in std_logic;
     clkb : in std_logic;
-    ena : in std_logic;
-    enb : in std_logic;
     wea : in std_logic;
     web : in std_logic;
     addra : in std_logic_vector (8 downto 0);
@@ -135,8 +132,10 @@ end entity async_dpram_9_33_bf8b4530d8d246dd74ac53a13471bba17941dff7;
 architecture rtl of async_dpram_9_33_bf8b4530d8d246dd74ac53a13471bba17941dff7 is
   signal ram_out_a : std_logic_vector (32 downto 0);
   signal ram_out_b : std_logic_vector (32 downto 0);
-  signal n277_o : std_logic;
-  signal n296_o : std_logic;
+  signal addra_r : std_logic_vector (8 downto 0);
+  signal addrb_r : std_logic_vector (8 downto 0);
+  signal n281_q : std_logic_vector (8 downto 0);
+  signal n296_q : std_logic_vector (8 downto 0);
   signal n305_q : std_logic_vector (32 downto 0);
   signal n311_q : std_logic_vector (32 downto 0);
   signal n314_data : std_logic_vector (32 downto 0);
@@ -144,51 +143,61 @@ architecture rtl of async_dpram_9_33_bf8b4530d8d246dd74ac53a13471bba17941dff7 is
 begin
   doa <= n305_q;
   dob <= n311_q;
-  -- entities/async_dpram.vhd:40:10
+  -- entities/async_dpram.vhd:31:10
   ram_out_a <= n315_data; -- (signal)
-  -- entities/async_dpram.vhd:41:10
+  -- entities/async_dpram.vhd:32:10
   ram_out_b <= n314_data; -- (signal)
-  -- entities/async_dpram.vhd:12:8
-  n277_o <= wea and ena;
-  -- entities/async_dpram.vhd:12:8
-  n296_o <= web and enb;
-  -- entities/async_dpram.vhd:68:7
+  -- entities/async_dpram.vhd:34:10
+  addra_r <= n281_q; -- (signal)
+  -- entities/async_dpram.vhd:35:10
+  addrb_r <= n296_q; -- (signal)
+  -- entities/async_dpram.vhd:39:5
+  process (clka)
+  begin
+    if rising_edge (clka) then
+      n281_q <= addra;
+    end if;
+  end process;
+  -- entities/async_dpram.vhd:49:5
+  process (clkb)
+  begin
+    if rising_edge (clkb) then
+      n296_q <= addrb;
+    end if;
+  end process;
+  -- entities/async_dpram.vhd:60:7
   process (clka)
   begin
     if rising_edge (clka) then
       n305_q <= ram_out_a;
     end if;
   end process;
-  -- entities/async_dpram.vhd:74:7
+  -- entities/async_dpram.vhd:66:7
   process (clkb)
   begin
     if rising_edge (clkb) then
       n311_q <= ram_out_b;
     end if;
   end process;
-  -- entities/async_dpram.vhd:31:5
-  process (clkb, clka, clkb, clka) is
+  -- entities/async_dpram.vhd:22:5
+  process (addrb_r, addra_r, clkb, clka) is
     type ram_type is array (0 to 511)
       of std_logic_vector (32 downto 0);
     variable ram : ram_type := (others => (others => 'X'));
   begin
-    if rising_edge (clkb) and (enb = '1') then
-      n314_data <= ram(to_integer (unsigned (addrb)));
-    end if;
-    if rising_edge (clka) and (ena = '1') then
-      n315_data <= ram(to_integer (unsigned (addra)));
-    end if;
-    if rising_edge (clkb) and (n296_o = '1') then
+    n314_data <= ram(to_integer (unsigned (addrb_r)));
+    n315_data <= ram(to_integer (unsigned (addra_r)));
+    if rising_edge (clkb) and (web = '1') then
       ram (to_integer (unsigned (addrb))) := dib;
     end if;
-    if rising_edge (clka) and (n277_o = '1') then
+    if rising_edge (clka) and (wea = '1') then
       ram (to_integer (unsigned (addra))) := dia;
     end if;
   end process;
-  -- entities/async_dpram.vhd:56:5
-  -- entities/async_dpram.vhd:45:5
-  -- entities/async_dpram.vhd:60:15
-  -- entities/async_dpram.vhd:49:15
+  -- entities/async_dpram.vhd:56:20
+  -- entities/async_dpram.vhd:46:20
+  -- entities/async_dpram.vhd:52:13
+  -- entities/async_dpram.vhd:42:13
 end rtl;
 
 library ieee;
@@ -205,36 +214,36 @@ end entity delay_vector_4_b2aa97e8911ab0960636412a10bb582b30f69335;
 
 architecture rtl of delay_vector_4_b2aa97e8911ab0960636412a10bb582b30f69335 is
   signal shreg : std_logic_vector (63 downto 0);
-  signal n249_o : std_logic_vector (15 downto 0);
-  signal n250_o : std_logic_vector (15 downto 0);
-  signal n251_o : std_logic_vector (15 downto 0);
-  signal n252_o : std_logic_vector (63 downto 0);
-  signal n256_o : std_logic_vector (63 downto 0);
-  signal n257_q : std_logic_vector (63 downto 0);
+  signal n257_o : std_logic_vector (15 downto 0);
   signal n258_o : std_logic_vector (15 downto 0);
+  signal n259_o : std_logic_vector (15 downto 0);
+  signal n260_o : std_logic_vector (63 downto 0);
+  signal n264_o : std_logic_vector (63 downto 0);
+  signal n265_q : std_logic_vector (63 downto 0);
+  signal n266_o : std_logic_vector (15 downto 0);
 begin
-  q <= n258_o;
+  q <= n266_o;
   -- entities/delay_vector.vhd:21:10
-  shreg <= n257_q; -- (signal)
+  shreg <= n265_q; -- (signal)
   -- entities/delay_vector.vhd:30:30
-  n249_o <= shreg (15 downto 0);
+  n257_o <= shreg (15 downto 0);
   -- entities/delay_vector.vhd:30:30
-  n250_o <= shreg (31 downto 16);
+  n258_o <= shreg (31 downto 16);
   -- entities/delay_vector.vhd:30:30
-  n251_o <= shreg (47 downto 32);
-  -- entities/abs_square.vhd:85:3
-  n252_o <= n251_o & n250_o & n249_o & d;
+  n259_o <= shreg (47 downto 32);
+  -- entities/abs_square.vhd:84:3
+  n260_o <= n259_o & n258_o & n257_o & d;
   -- entities/delay_vector.vhd:27:5
-  n256_o <= shreg when clken = '0' else n252_o;
+  n264_o <= shreg when clken = '0' else n260_o;
   -- entities/delay_vector.vhd:27:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n257_q <= n256_o;
+      n265_q <= n264_o;
     end if;
   end process;
   -- entities/delay_vector.vhd:37:13
-  n258_o <= shreg (63 downto 48);
+  n266_o <= shreg (63 downto 48);
 end rtl;
 
 library ieee;
@@ -267,193 +276,197 @@ architecture rtl of abs_square_c17fd92682ca5b304ac71074b558dda9e8eb4d66 is
   signal din_i_sq_rrr : std_logic_vector (15 downto 0);
   signal din_q_sq_rrr : std_logic_vector (15 downto 0);
   -- attribute use_dsp of din_q_sq_rrr is "yes";
-  signal n174_o : std_logic_vector (7 downto 0);
-  signal n176_o : std_logic_vector (7 downto 0);
-  signal n180_q : std_logic_vector (7 downto 0);
-  signal n181_q : std_logic_vector (7 downto 0);
-  signal n185_o : std_logic_vector (15 downto 0);
-  signal n186_o : std_logic_vector (15 downto 0);
-  signal n187_o : std_logic_vector (15 downto 0);
-  signal n189_o : std_logic_vector (7 downto 0);
-  signal n191_o : std_logic_vector (7 downto 0);
+  signal n182_o : std_logic_vector (7 downto 0);
+  signal n184_o : std_logic_vector (7 downto 0);
+  signal n188_q : std_logic_vector (7 downto 0);
+  signal n189_q : std_logic_vector (7 downto 0);
   signal n193_o : std_logic_vector (15 downto 0);
-  signal n198_q : std_logic_vector (7 downto 0);
-  signal n199_q : std_logic_vector (7 downto 0);
-  signal n200_q : std_logic_vector (15 downto 0);
-  signal n204_o : std_logic_vector (15 downto 0);
-  signal n205_o : std_logic_vector (15 downto 0);
-  signal n206_o : std_logic_vector (15 downto 0);
-  signal n220_q : std_logic_vector (7 downto 0);
-  signal n221_q : std_logic_vector (7 downto 0);
-  signal n222_q : std_logic_vector (15 downto 0);
-  signal n223_q : std_logic_vector (15 downto 0);
-  signal n227_o : std_logic_vector (15 downto 0);
-  signal n229_o : std_logic_vector (7 downto 0);
-  signal n231_o : std_logic_vector (7 downto 0);
-  signal n233_o : std_logic_vector (15 downto 0);
-  signal n238_q : std_logic_vector (7 downto 0);
-  signal n239_q : std_logic_vector (7 downto 0);
-  signal n240_q : std_logic_vector (15 downto 0);
+  signal n194_o : std_logic_vector (15 downto 0);
+  signal n195_o : std_logic_vector (15 downto 0);
+  signal n197_o : std_logic_vector (7 downto 0);
+  signal n199_o : std_logic_vector (7 downto 0);
+  signal n201_o : std_logic_vector (15 downto 0);
+  signal n206_q : std_logic_vector (7 downto 0);
+  signal n207_q : std_logic_vector (7 downto 0);
+  signal n208_q : std_logic_vector (15 downto 0);
+  signal n212_o : std_logic_vector (15 downto 0);
+  signal n213_o : std_logic_vector (15 downto 0);
+  signal n214_o : std_logic_vector (15 downto 0);
+  signal n216_o : std_logic_vector (7 downto 0);
+  signal n218_o : std_logic_vector (7 downto 0);
+  signal n220_o : std_logic_vector (15 downto 0);
+  signal n222_o : std_logic_vector (15 downto 0);
+  signal n228_q : std_logic_vector (7 downto 0);
+  signal n229_q : std_logic_vector (7 downto 0);
+  signal n230_q : std_logic_vector (15 downto 0);
+  signal n231_q : std_logic_vector (15 downto 0);
+  signal n235_o : std_logic_vector (15 downto 0);
+  signal n237_o : std_logic_vector (7 downto 0);
+  signal n239_o : std_logic_vector (7 downto 0);
+  signal n241_o : std_logic_vector (15 downto 0);
+  signal n246_q : std_logic_vector (7 downto 0);
+  signal n247_q : std_logic_vector (7 downto 0);
+  signal n248_q : std_logic_vector (15 downto 0);
   signal dv_q : std_logic;
-  constant n241_o : std_logic := '1';
+  constant n249_o : std_logic := '1';
   signal db_q : std_logic;
-  constant n243_o : std_logic := '1';
+  constant n251_o : std_logic := '1';
 begin
-  dout_i <= n238_q;
-  dout_q <= n239_q;
+  dout_i <= n246_q;
+  dout_q <= n247_q;
   dout_valid <= db_q;
-  dout_pow_sq <= n240_q;
+  dout_pow_sq <= n248_q;
   dout_mark <= dv_q;
   -- entities/abs_square.vhd:29:10
-  din_i_r <= n180_q; -- (signal)
+  din_i_r <= n188_q; -- (signal)
   -- entities/abs_square.vhd:30:10
-  din_q_r <= n181_q; -- (signal)
+  din_q_r <= n189_q; -- (signal)
   -- entities/abs_square.vhd:32:10
-  din_i_rr <= n198_q; -- (signal)
+  din_i_rr <= n206_q; -- (signal)
   -- entities/abs_square.vhd:33:10
-  din_q_rr <= n199_q; -- (signal)
+  din_q_rr <= n207_q; -- (signal)
   -- entities/abs_square.vhd:34:10
-  din_i_sq_rr <= n200_q; -- (signal)
+  din_i_sq_rr <= n208_q; -- (signal)
   -- entities/abs_square.vhd:36:10
-  din_i_rrr <= n220_q; -- (signal)
+  din_i_rrr <= n228_q; -- (signal)
   -- entities/abs_square.vhd:37:10
-  din_q_rrr <= n221_q; -- (signal)
+  din_q_rrr <= n229_q; -- (signal)
   -- entities/abs_square.vhd:38:10
-  din_i_sq_rrr <= n222_q; -- (signal)
+  din_i_sq_rrr <= n230_q; -- (signal)
   -- entities/abs_square.vhd:39:10
-  din_q_sq_rrr <= n223_q; -- (signal)
+  din_q_sq_rrr <= n231_q; -- (signal)
   -- entities/abs_square.vhd:49:7
-  n174_o <= din_i when reset = '0' else "00000000";
+  n182_o <= din_i when reset = '0' else "00000000";
   -- entities/abs_square.vhd:49:7
-  n176_o <= din_q when reset = '0' else "00000000";
+  n184_o <= din_q when reset = '0' else "00000000";
   -- entities/abs_square.vhd:46:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n180_q <= n174_o;
+      n188_q <= n182_o;
     end if;
   end process;
   -- entities/abs_square.vhd:46:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n181_q <= n176_o;
+      n189_q <= n184_o;
     end if;
   end process;
   -- entities/abs_square.vhd:60:38
-  n185_o <= std_logic_vector (resize (signed (din_i_r), 16));  --  sext
+  n193_o <= std_logic_vector (resize (signed (din_i_r), 16));  --  sext
   -- entities/abs_square.vhd:60:38
-  n186_o <= std_logic_vector (resize (signed (din_i_r), 16));  --  sext
+  n194_o <= std_logic_vector (resize (signed (din_i_r), 16));  --  sext
   -- entities/abs_square.vhd:60:38
-  n187_o <= std_logic_vector (resize (signed (n185_o) * signed (n186_o), 16));
+  n195_o <= std_logic_vector (resize (signed (n193_o) * signed (n194_o), 16));
   -- entities/abs_square.vhd:61:7
-  n189_o <= din_i_r when reset = '0' else "00000000";
+  n197_o <= din_i_r when reset = '0' else "00000000";
   -- entities/abs_square.vhd:61:7
-  n191_o <= din_q_r when reset = '0' else "00000000";
+  n199_o <= din_q_r when reset = '0' else "00000000";
   -- entities/abs_square.vhd:61:7
-  n193_o <= n187_o when reset = '0' else "0000000000000000";
+  n201_o <= n195_o when reset = '0' else "0000000000000000";
   -- entities/abs_square.vhd:57:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n198_q <= n189_o;
-    end if;
-  end process;
-  -- entities/abs_square.vhd:57:5
-  process (clk)
-  begin
-    if rising_edge (clk) then
-      n199_q <= n191_o;
+      n206_q <= n197_o;
     end if;
   end process;
   -- entities/abs_square.vhd:57:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n200_q <= n193_o;
+      n207_q <= n199_o;
     end if;
   end process;
-  -- entities/abs_square.vhd:74:40
-  n204_o <= std_logic_vector (resize (signed (din_q_rr), 16));  --  sext
-  -- entities/abs_square.vhd:74:40
-  n205_o <= std_logic_vector (resize (signed (din_q_rr), 16));  --  sext
-  -- entities/abs_square.vhd:74:40
-  n206_o <= std_logic_vector (resize (signed (n204_o) * signed (n205_o), 16));
-  -- entities/abs_square.vhd:70:5
-  process (clk, reset)
-  begin
-    if reset = '1' then
-      n220_q <= "00000000";
-    elsif rising_edge (clk) then
-      n220_q <= din_i_rr;
-    end if;
-  end process;
-  -- entities/abs_square.vhd:70:5
-  process (clk, reset)
-  begin
-    if reset = '1' then
-      n221_q <= "00000000";
-    elsif rising_edge (clk) then
-      n221_q <= din_q_rr;
-    end if;
-  end process;
-  -- entities/abs_square.vhd:70:5
-  process (clk, reset)
-  begin
-    if reset = '1' then
-      n222_q <= "0000000000000000";
-    elsif rising_edge (clk) then
-      n222_q <= din_i_sq_rr;
-    end if;
-  end process;
-  -- entities/abs_square.vhd:70:5
-  process (clk, reset)
-  begin
-    if reset = '1' then
-      n223_q <= "0000000000000000";
-    elsif rising_edge (clk) then
-      n223_q <= n206_o;
-    end if;
-  end process;
-  -- entities/abs_square.vhd:89:52
-  n227_o <= std_logic_vector (unsigned (din_i_sq_rrr) + unsigned (din_q_sq_rrr));
-  -- entities/abs_square.vhd:90:7
-  n229_o <= din_i_rrr when reset = '0' else "00000000";
-  -- entities/abs_square.vhd:90:7
-  n231_o <= din_q_rrr when reset = '0' else "00000000";
-  -- entities/abs_square.vhd:90:7
-  n233_o <= n227_o when reset = '0' else "0000000000000000";
-  -- entities/abs_square.vhd:86:5
+  -- entities/abs_square.vhd:57:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n238_q <= n229_o;
+      n208_q <= n201_o;
     end if;
   end process;
-  -- entities/abs_square.vhd:86:5
+  -- entities/abs_square.vhd:74:40
+  n212_o <= std_logic_vector (resize (signed (din_q_rr), 16));  --  sext
+  -- entities/abs_square.vhd:74:40
+  n213_o <= std_logic_vector (resize (signed (din_q_rr), 16));  --  sext
+  -- entities/abs_square.vhd:74:40
+  n214_o <= std_logic_vector (resize (signed (n212_o) * signed (n213_o), 16));
+  -- entities/abs_square.vhd:75:7
+  n216_o <= din_i_rr when reset = '0' else "00000000";
+  -- entities/abs_square.vhd:75:7
+  n218_o <= din_q_rr when reset = '0' else "00000000";
+  -- entities/abs_square.vhd:75:7
+  n220_o <= din_i_sq_rr when reset = '0' else "0000000000000000";
+  -- entities/abs_square.vhd:75:7
+  n222_o <= n214_o when reset = '0' else "0000000000000000";
+  -- entities/abs_square.vhd:70:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n239_q <= n231_o;
+      n228_q <= n216_o;
     end if;
   end process;
-  -- entities/abs_square.vhd:86:5
+  -- entities/abs_square.vhd:70:5
   process (clk)
   begin
     if rising_edge (clk) then
-      n240_q <= n233_o;
+      n229_q <= n218_o;
     end if;
   end process;
-  -- entities/abs_square.vhd:98:3
+  -- entities/abs_square.vhd:70:5
+  process (clk)
+  begin
+    if rising_edge (clk) then
+      n230_q <= n220_o;
+    end if;
+  end process;
+  -- entities/abs_square.vhd:70:5
+  process (clk)
+  begin
+    if rising_edge (clk) then
+      n231_q <= n222_o;
+    end if;
+  end process;
+  -- entities/abs_square.vhd:88:52
+  n235_o <= std_logic_vector (unsigned (din_i_sq_rrr) + unsigned (din_q_sq_rrr));
+  -- entities/abs_square.vhd:89:7
+  n237_o <= din_i_rrr when reset = '0' else "00000000";
+  -- entities/abs_square.vhd:89:7
+  n239_o <= din_q_rrr when reset = '0' else "00000000";
+  -- entities/abs_square.vhd:89:7
+  n241_o <= n235_o when reset = '0' else "0000000000000000";
+  -- entities/abs_square.vhd:85:5
+  process (clk)
+  begin
+    if rising_edge (clk) then
+      n246_q <= n237_o;
+    end if;
+  end process;
+  -- entities/abs_square.vhd:85:5
+  process (clk)
+  begin
+    if rising_edge (clk) then
+      n247_q <= n239_o;
+    end if;
+  end process;
+  -- entities/abs_square.vhd:85:5
+  process (clk)
+  begin
+    if rising_edge (clk) then
+      n248_q <= n241_o;
+    end if;
+  end process;
+  -- entities/abs_square.vhd:97:3
   dv : entity work.delay_vector_4_c17fd92682ca5b304ac71074b558dda9e8eb4d66 port map (
     clk => clk,
-    clken => n241_o,
+    clken => n249_o,
     d => din_mark,
     q => dv_q);
-  -- entities/abs_square.vhd:111:3
+  -- entities/abs_square.vhd:110:3
   db : entity work.delay_bit_4 port map (
     clk => clk,
-    clken => n243_o,
+    clken => n251_o,
     d => din_valid,
     q => db_q);
 end rtl;
@@ -553,59 +566,60 @@ architecture rtl of test_comp is
   signal n45_q : std_logic;
   signal ram_inst_doa : std_logic_vector (32 downto 0);
   signal ram_inst_dob : std_logic_vector (32 downto 0);
-  constant n46_o : std_logic := '1';
-  constant n47_o : std_logic := '1';
-  constant n48_o : std_logic := '0';
-  constant n49_o : std_logic_vector (32 downto 0) := "000000000000000000000000000000000";
-  signal n55_o : std_logic_vector (8 downto 0);
-  signal n60_q : std_logic_vector (8 downto 0);
-  signal n61_q : std_logic;
-  signal n62_q : std_logic;
-  signal n63_o : std_logic_vector (15 downto 0);
-  signal n64_o : std_logic_vector (7 downto 0);
-  signal n65_o : std_logic_vector (7 downto 0);
-  signal n66_o : std_logic;
+  constant n46_o : std_logic := '0';
+  constant n47_o : std_logic_vector (32 downto 0) := "000000000000000000000000000000000";
+  signal n53_o : std_logic_vector (8 downto 0);
+  signal n58_q : std_logic_vector (8 downto 0);
+  signal n59_q : std_logic;
+  signal n60_q : std_logic;
+  signal n61_o : std_logic_vector (15 downto 0);
+  signal n62_o : std_logic_vector (7 downto 0);
+  signal n63_o : std_logic_vector (7 downto 0);
+  signal n64_o : std_logic;
+  signal n69_o : std_logic_vector (16 downto 0);
   signal n71_o : std_logic_vector (16 downto 0);
-  signal n73_o : std_logic_vector (16 downto 0);
-  signal n74_o : std_logic_vector (16 downto 0);
-  signal n82_q : std_logic_vector (7 downto 0);
-  signal n83_q : std_logic_vector (7 downto 0);
-  signal n84_q : std_logic_vector (15 downto 0);
-  signal n85_q : std_logic;
-  signal n86_q : std_logic;
-  signal n87_q : std_logic_vector (16 downto 0);
-  signal n92_o : std_logic_vector (16 downto 0);
-  signal n93_o : std_logic;
-  signal n96_o : std_logic;
-  signal n105_q : std_logic_vector (7 downto 0);
-  signal n106_q : std_logic_vector (7 downto 0);
-  signal n107_q : std_logic_vector (15 downto 0);
+  signal n72_o : std_logic_vector (16 downto 0);
+  signal n80_q : std_logic_vector (7 downto 0);
+  signal n81_q : std_logic_vector (7 downto 0);
+  signal n82_q : std_logic_vector (15 downto 0);
+  signal n83_q : std_logic;
+  signal n84_q : std_logic;
+  signal n85_q : std_logic_vector (16 downto 0);
+  signal n90_o : std_logic_vector (16 downto 0);
+  signal n91_o : std_logic;
+  signal n94_o : std_logic;
+  signal n103_q : std_logic_vector (7 downto 0);
+  signal n104_q : std_logic_vector (7 downto 0);
+  signal n105_q : std_logic_vector (15 downto 0);
+  signal n106_q : std_logic;
+  signal n107_q : std_logic;
   signal n108_q : std_logic;
-  signal n109_q : std_logic;
-  signal n110_q : std_logic;
-  signal n117_q : std_logic_vector (15 downto 0);
+  signal n112_o : std_logic_vector (17 downto 0);
+  signal n117_q : std_logic_vector (17 downto 0);
   signal n118_q : std_logic_vector (15 downto 0);
-  signal n122_o : std_logic;
-  signal n124_o : std_logic;
-  signal n126_o : std_logic;
-  signal n129_o : std_logic;
-  signal n130_o : std_logic;
-  signal n132_o : std_logic_vector (1 downto 0);
-  signal n135_o : std_logic_vector (15 downto 0);
+  signal n119_q : std_logic;
+  signal n126_q : std_logic_vector (15 downto 0);
+  signal n127_q : std_logic_vector (15 downto 0);
+  signal n131_o : std_logic;
+  signal n133_o : std_logic;
+  signal n135_o : std_logic;
   signal n138_o : std_logic;
-  signal n140_o : std_logic;
-  signal n141_o : std_logic_vector (15 downto 0);
-  signal n143_o : std_logic_vector (15 downto 0);
-  signal n145_o : std_logic;
-  signal n146_o : std_logic;
+  signal n139_o : std_logic;
+  signal n141_o : std_logic_vector (1 downto 0);
+  signal n144_o : std_logic_vector (15 downto 0);
+  signal n147_o : std_logic;
   signal n149_o : std_logic;
-  signal n158_q : std_logic := '1';
-  signal n159_o : std_logic_vector (15 downto 0);
-  signal n160_q : std_logic_vector (15 downto 0);
-  signal n161_q : std_logic;
-  signal n162_o : std_logic_vector (15 downto 0);
-  signal n163_q : std_logic_vector (15 downto 0);
-  signal n164_o : std_logic_vector (17 downto 0);
+  signal n150_o : std_logic_vector (15 downto 0);
+  signal n152_o : std_logic_vector (15 downto 0);
+  signal n154_o : std_logic;
+  signal n155_o : std_logic;
+  signal n158_o : std_logic;
+  signal n167_q : std_logic := '1';
+  signal n168_o : std_logic_vector (15 downto 0);
+  signal n169_q : std_logic_vector (15 downto 0);
+  signal n170_q : std_logic;
+  signal n171_o : std_logic_vector (15 downto 0);
+  signal n172_q : std_logic_vector (15 downto 0);
 begin
   wrap_reset <= reset;
   wrap_clk <= clk;
@@ -630,15 +644,15 @@ begin
   wrap_dout_q <= n3_o;
   wrap_dout_valid <= n4_o;
   wrap_dout_pps <= n5_o;
-  wrap_dout_sq_power <= ram_out_pow_rr;
-  wrap_dout_frame <= edge_detected;
-  wrap_reg_rd_data <= n160_q;
-  wrap_reg_rd_ack <= n161_q;
+  wrap_dout_sq_power <= n118_q;
+  wrap_dout_frame <= n119_q;
+  wrap_reg_rd_data <= n169_q;
+  wrap_reg_rd_ack <= n170_q;
   n0_o <= wrap_din_pps & wrap_din_valid & wrap_din_q & wrap_din_i;
-  n2_o <= n164_o (7 downto 0);
-  n3_o <= n164_o (15 downto 8);
-  n4_o <= n164_o (16);
-  n5_o <= n164_o (17);
+  n2_o <= n117_q (7 downto 0);
+  n3_o <= n117_q (15 downto 8);
+  n4_o <= n117_q (16);
+  n5_o <= n117_q (17);
   -- test_comp.vhd:33:10
   din_r <= n15_q; -- (signal)
   -- test_comp.vhd:35:10
@@ -658,53 +672,53 @@ begin
   -- test_comp.vhd:43:10
   ram_wr_en <= n45_q; -- (signal)
   -- test_comp.vhd:45:10
-  ram_rd_addr <= n60_q; -- (signal)
+  ram_rd_addr <= n58_q; -- (signal)
   -- test_comp.vhd:46:10
   ram_rd_data <= ram_inst_dob; -- (signal)
   -- test_comp.vhd:48:10
-  ram_rd_valid <= n61_q; -- (signal)
+  ram_rd_valid <= n59_q; -- (signal)
   -- test_comp.vhd:49:10
-  ram_rd_valid_r <= n62_q; -- (signal)
+  ram_rd_valid_r <= n60_q; -- (signal)
   -- test_comp.vhd:51:10
-  ram_out_i <= n64_o; -- (signal)
+  ram_out_i <= n62_o; -- (signal)
   -- test_comp.vhd:52:10
-  ram_out_q <= n65_o; -- (signal)
+  ram_out_q <= n63_o; -- (signal)
   -- test_comp.vhd:53:10
-  ram_out_pow <= n63_o; -- (signal)
+  ram_out_pow <= n61_o; -- (signal)
   -- test_comp.vhd:54:10
-  ram_out_pps <= n66_o; -- (signal)
+  ram_out_pps <= n64_o; -- (signal)
   -- test_comp.vhd:55:10
   abs_pow_delayed <= dv_q; -- (signal)
   -- test_comp.vhd:57:10
-  ram_out_i_r <= n82_q; -- (signal)
+  ram_out_i_r <= n80_q; -- (signal)
   -- test_comp.vhd:58:10
-  ram_out_q_r <= n83_q; -- (signal)
+  ram_out_q_r <= n81_q; -- (signal)
   -- test_comp.vhd:59:10
-  ram_out_pow_r <= n84_q; -- (signal)
+  ram_out_pow_r <= n82_q; -- (signal)
   -- test_comp.vhd:60:10
-  ram_out_valid_r <= n85_q; -- (signal)
+  ram_out_valid_r <= n83_q; -- (signal)
   -- test_comp.vhd:61:10
-  ram_out_pps_r <= n86_q; -- (signal)
+  ram_out_pps_r <= n84_q; -- (signal)
   -- test_comp.vhd:62:10
-  power_difference <= n87_q; -- (signal)
+  power_difference <= n85_q; -- (signal)
   -- test_comp.vhd:64:10
-  ram_out_i_rr <= n105_q; -- (signal)
+  ram_out_i_rr <= n103_q; -- (signal)
   -- test_comp.vhd:65:10
-  ram_out_q_rr <= n106_q; -- (signal)
+  ram_out_q_rr <= n104_q; -- (signal)
   -- test_comp.vhd:66:10
-  ram_out_pow_rr <= n107_q; -- (signal)
+  ram_out_pow_rr <= n105_q; -- (signal)
   -- test_comp.vhd:67:10
-  ram_out_valid_rr <= n108_q; -- (signal)
+  ram_out_valid_rr <= n106_q; -- (signal)
   -- test_comp.vhd:68:10
-  ram_out_pps_rr <= n109_q; -- (signal)
+  ram_out_pps_rr <= n107_q; -- (signal)
   -- test_comp.vhd:69:10
-  edge_detected <= n110_q; -- (signal)
+  edge_detected <= n108_q; -- (signal)
   -- test_comp.vhd:71:10
-  threshold <= n117_q; -- (signal)
+  threshold <= n126_q; -- (signal)
   -- test_comp.vhd:72:10
-  threshold_reg <= n163_q; -- (signal)
+  threshold_reg <= n172_q; -- (signal)
   -- test_comp.vhd:73:10
-  threshold_reg_r <= n118_q; -- (signal)
+  threshold_reg_r <= n127_q; -- (signal)
   -- test_comp.vhd:79:5
   process (wrap_clk)
   begin
@@ -777,226 +791,244 @@ begin
   ram_inst : entity work.async_dpram_9_33_bf8b4530d8d246dd74ac53a13471bba17941dff7 port map (
     clka => wrap_clk,
     clkb => wrap_clk,
-    ena => n46_o,
-    enb => n47_o,
     wea => ram_wr_en,
-    web => n48_o,
+    web => n46_o,
     addra => ram_wr_addr,
     addrb => ram_rd_addr,
     dia => ram_wr_data,
-    dib => n49_o,
+    dib => n47_o,
     doa => open,
     dob => ram_inst_dob);
   -- test_comp.vhd:154:65
-  n55_o <= std_logic_vector (unsigned (ram_wr_addr) - unsigned'("110010000"));
+  n53_o <= std_logic_vector (unsigned (ram_wr_addr) - unsigned'("110010000"));
   -- test_comp.vhd:153:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n60_q <= n55_o;
+      n58_q <= n53_o;
     end if;
   end process;
   -- test_comp.vhd:153:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n61_q <= abs_valid;
+      n59_q <= abs_valid;
     end if;
   end process;
   -- test_comp.vhd:153:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n62_q <= ram_rd_valid;
+      n60_q <= ram_rd_valid;
     end if;
   end process;
   -- test_comp.vhd:161:29
-  n63_o <= ram_rd_data (32 downto 17);
+  n61_o <= ram_rd_data (32 downto 17);
   -- test_comp.vhd:162:29
-  n64_o <= ram_rd_data (16 downto 9);
+  n62_o <= ram_rd_data (16 downto 9);
   -- test_comp.vhd:163:29
-  n65_o <= ram_rd_data (8 downto 1);
+  n63_o <= ram_rd_data (8 downto 1);
   -- test_comp.vhd:164:29
-  n66_o <= ram_rd_data (0);
+  n64_o <= ram_rd_data (0);
   -- test_comp.vhd:173:38
-  n71_o <= '0' & abs_pow_delayed;
+  n69_o <= '0' & abs_pow_delayed;
   -- test_comp.vhd:173:70
-  n73_o <= '0' & ram_out_pow;
+  n71_o <= '0' & ram_out_pow;
   -- test_comp.vhd:173:57
-  n74_o <= std_logic_vector (unsigned (n71_o) - unsigned (n73_o));
+  n72_o <= std_logic_vector (unsigned (n69_o) - unsigned (n71_o));
   -- test_comp.vhd:167:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n82_q <= ram_out_i;
+      n80_q <= ram_out_i;
     end if;
   end process;
   -- test_comp.vhd:167:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n83_q <= ram_out_q;
+      n81_q <= ram_out_q;
     end if;
   end process;
   -- test_comp.vhd:167:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n84_q <= ram_out_pow;
+      n82_q <= ram_out_pow;
     end if;
   end process;
   -- test_comp.vhd:167:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n85_q <= ram_rd_valid_r;
+      n83_q <= ram_rd_valid_r;
     end if;
   end process;
   -- test_comp.vhd:167:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n86_q <= ram_out_pps;
+      n84_q <= ram_out_pps;
     end if;
   end process;
   -- test_comp.vhd:167:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n87_q <= n74_o;
+      n85_q <= n72_o;
     end if;
   end process;
   -- test_comp.vhd:186:40
-  n92_o <= '0' & threshold;
+  n90_o <= '0' & threshold;
   -- test_comp.vhd:186:27
-  n93_o <= '1' when signed (power_difference) > signed (n92_o) else '0';
+  n91_o <= '1' when signed (power_difference) > signed (n90_o) else '0';
   -- test_comp.vhd:186:7
-  n96_o <= '0' when n93_o = '0' else '1';
+  n94_o <= '0' when n91_o = '0' else '1';
   -- test_comp.vhd:179:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n105_q <= ram_out_i_r;
-    end if;
-  end process;
-  -- test_comp.vhd:179:5
-  process (wrap_clk)
-  begin
-    if rising_edge (wrap_clk) then
-      n106_q <= ram_out_q_r;
+      n103_q <= ram_out_i_r;
     end if;
   end process;
   -- test_comp.vhd:179:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n107_q <= ram_out_pow_r;
+      n104_q <= ram_out_q_r;
     end if;
   end process;
   -- test_comp.vhd:179:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n108_q <= ram_out_valid_r;
+      n105_q <= ram_out_pow_r;
     end if;
   end process;
   -- test_comp.vhd:179:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n109_q <= ram_out_pps_r;
+      n106_q <= ram_out_valid_r;
     end if;
   end process;
   -- test_comp.vhd:179:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n110_q <= n96_o;
+      n107_q <= ram_out_pps_r;
     end if;
   end process;
-  -- test_comp.vhd:200:5
+  -- test_comp.vhd:179:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n117_q <= threshold_reg_r;
+      n108_q <= n94_o;
     end if;
   end process;
-  -- test_comp.vhd:200:5
+  n112_o <= ram_out_pps_rr & ram_out_valid_rr & ram_out_q_rr & ram_out_i_rr;
+  -- test_comp.vhd:193:5
   process (wrap_clk)
   begin
     if rising_edge (wrap_clk) then
-      n118_q <= threshold_reg;
+      n117_q <= n112_o;
     end if;
   end process;
-  -- test_comp.vhd:210:22
-  n122_o <= not wrap_reg_wr_en;
-  -- test_comp.vhd:212:13
-  n124_o <= '1' when wrap_reg_addr = "00000000" else '0';
-  -- test_comp.vhd:214:13
-  n126_o <= '1' when wrap_reg_addr = "00000001" else '0';
-  -- test_comp.vhd:217:15
-  n129_o <= not n149_o;
-  -- test_comp.vhd:217:15
-  n130_o <= n129_o or '0';
-  -- test_comp.vhd:217:15
-  n131: postponed assert n158_q = '1' severity error; --  assert
-  n132_o <= n126_o & n124_o;
-  -- test_comp.vhd:211:11
-  with n132_o select n135_o <=
+  -- test_comp.vhd:193:5
+  process (wrap_clk)
+  begin
+    if rising_edge (wrap_clk) then
+      n118_q <= ram_out_pow_rr;
+    end if;
+  end process;
+  -- test_comp.vhd:193:5
+  process (wrap_clk)
+  begin
+    if rising_edge (wrap_clk) then
+      n119_q <= edge_detected;
+    end if;
+  end process;
+  -- test_comp.vhd:204:5
+  process (wrap_clk)
+  begin
+    if rising_edge (wrap_clk) then
+      n126_q <= threshold_reg_r;
+    end if;
+  end process;
+  -- test_comp.vhd:204:5
+  process (wrap_clk)
+  begin
+    if rising_edge (wrap_clk) then
+      n127_q <= threshold_reg;
+    end if;
+  end process;
+  -- test_comp.vhd:214:22
+  n131_o <= not wrap_reg_wr_en;
+  -- test_comp.vhd:216:13
+  n133_o <= '1' when wrap_reg_addr = "00000000" else '0';
+  -- test_comp.vhd:218:13
+  n135_o <= '1' when wrap_reg_addr = "00000001" else '0';
+  -- test_comp.vhd:221:15
+  n138_o <= not n158_o;
+  -- test_comp.vhd:221:15
+  n139_o <= n138_o or '0';
+  -- test_comp.vhd:221:15
+  n140: postponed assert n167_q = '1' severity error; --  assert
+  n141_o <= n135_o & n133_o;
+  -- test_comp.vhd:215:11
+  with n141_o select n144_o <=
     threshold_reg when "10",
     "0000101100001011" when "01",
     "XXXXXXXXXXXXXXXX" when others;
-  -- test_comp.vhd:211:11
-  with n132_o select n138_o <=
+  -- test_comp.vhd:215:11
+  with n141_o select n147_o <=
     '0' when "10",
     '0' when "01",
     '1' when others;
-  -- test_comp.vhd:222:13
-  n140_o <= '1' when wrap_reg_addr = "00000001" else '0';
-  -- test_comp.vhd:221:11
-  with n140_o select n141_o <=
+  -- test_comp.vhd:226:13
+  n149_o <= '1' when wrap_reg_addr = "00000001" else '0';
+  -- test_comp.vhd:225:11
+  with n149_o select n150_o <=
     wrap_reg_wr_data when '1',
     threshold_reg when others;
-  -- test_comp.vhd:210:9
-  n143_o <= n141_o when n122_o = '0' else threshold_reg;
-  -- test_comp.vhd:210:9
-  n145_o <= '0' when n122_o = '0' else n138_o;
-  -- test_comp.vhd:209:7
-  n146_o <= wrap_reg_en and n122_o;
-  -- test_comp.vhd:209:7
-  n149_o <= '0' when wrap_reg_en = '0' else n145_o;
-  -- test_comp.vhd:206:3
+  -- test_comp.vhd:214:9
+  n152_o <= n150_o when n131_o = '0' else threshold_reg;
+  -- test_comp.vhd:214:9
+  n154_o <= '0' when n131_o = '0' else n147_o;
+  -- test_comp.vhd:213:7
+  n155_o <= wrap_reg_en and n131_o;
+  -- test_comp.vhd:213:7
+  n158_o <= '0' when wrap_reg_en = '0' else n154_o;
+  -- test_comp.vhd:210:3
   process (wrap_reg_clk)
   begin
     if rising_edge (wrap_reg_clk) then
-      n158_q <= n130_o;
+      n167_q <= n139_o;
     end if;
   end process;
-  -- test_comp.vhd:207:5
-  n159_o <= n160_q when n146_o = '0' else n135_o;
-  -- test_comp.vhd:207:5
+  -- test_comp.vhd:211:5
+  n168_o <= n169_q when n155_o = '0' else n144_o;
+  -- test_comp.vhd:211:5
   process (wrap_reg_clk)
   begin
     if rising_edge (wrap_reg_clk) then
-      n160_q <= n159_o;
+      n169_q <= n168_o;
     end if;
   end process;
-  -- test_comp.vhd:207:5
+  -- test_comp.vhd:211:5
   process (wrap_reg_clk)
   begin
     if rising_edge (wrap_reg_clk) then
-      n161_q <= wrap_reg_en;
+      n170_q <= wrap_reg_en;
     end if;
   end process;
-  -- test_comp.vhd:207:5
-  n162_o <= threshold_reg when wrap_reg_en = '0' else n143_o;
-  -- test_comp.vhd:207:5
+  -- test_comp.vhd:211:5
+  n171_o <= threshold_reg when wrap_reg_en = '0' else n152_o;
+  -- test_comp.vhd:211:5
   process (wrap_reg_clk)
   begin
     if rising_edge (wrap_reg_clk) then
-      n163_q <= n162_o;
+      n172_q <= n171_o;
     end if;
   end process;
-  -- test_comp.vhd:207:5
-  n164_o <= ram_out_pps_rr & ram_out_valid_rr & ram_out_q_rr & ram_out_i_rr;
 end rtl;

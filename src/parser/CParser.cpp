@@ -760,20 +760,36 @@ void CParser::parseProcess(std::vector<std::string>::iterator& itr, CEntity* ent
 	}
 	++itr;
 
+
 	while(strstr(itr->c_str(), "end process;") == NULL)
 	{
 		// we expect one or more if rising_edge(
 		// possibly with additional conditional expressions
+		// There may be ifs and assignments in the mix too, just for fun
 		ptr = itr->c_str();
 		while(*ptr == ' ' || *ptr == '\t')
 		{
 			ptr++;
 		}
+
 		const char* prefix = "if rising_edge (";
-		if(strstr(ptr, prefix) != ptr)
+		while(strstr(ptr, prefix) != ptr)
 		{
-			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Code Error: You have a mix of synchronous and asynchronuous statements in a process, this is a bad idea, go fix it!");
-			error(ELogLevel::FATAL, itr);
+			if(strstr(ptr, "if ") == ptr)
+			{
+				CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL, "Code Error: Mixed synchronous and asynchronous dependencies in process. This is a bad idea, change the code");
+				error(ELogLevel::FATAL, itr);
+			}
+
+			// unclocked statement in a process, this is questionable code, but GHDL does this when using variables (RAMs)
+			CSignal* lhs = parseAssignment(itr, entity);
+			assignedSignals.push_back(lhs);
+
+			ptr = itr->c_str();
+			while(*ptr == ' ' || *ptr == '\t')
+			{
+				ptr++;
+			}
 		}
 
 		ptr += strlen(prefix);
@@ -989,6 +1005,8 @@ void CParser::parseInstantiation(std::vector<std::string>::iterator& itr, CEntit
 	    d => abs_pow,
 	    q => dv_q);
 	  -- entities/delay_vector.vhd:34:15
+
+	  n131: postponed assert n158_q = '1' severity error; --  assert
 	*/
 
 	const char* ptr = itr->c_str();

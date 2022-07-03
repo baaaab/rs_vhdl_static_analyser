@@ -41,7 +41,7 @@ void CDotGraphCreator::createDotGraph(const CNetList* netlist)
 	for(const CSignalInstantiation& si : netlist->getNets())
 	{
 		std::set<const CSignalInstantiation*> recursedNodes;
-		bool isUserDefined = !_userDefinedSignalsOnly || si.isUserDefined();
+		bool isUserDefined = !_userDefinedSignalsOnly || si.isUserDefined() || si.isClocked();
 
 		if(isUserDefined)
 		{
@@ -110,7 +110,7 @@ void CDotGraphCreator::createDriverDefinitionsRecursive(int depth, const CSignal
 	}
 
 	std::pair<const CSignalInstantiation*, const CSignalInstantiation*> path(drivenSignal, driverToElaborate);
-	if(depth != 0 && (!_userDefinedSignalsOnly || driverToElaborate->isUserDefined()) && definedPaths.count(path) == 0)
+	if(depth != 0 && (!_userDefinedSignalsOnly || driverToElaborate->isUserDefined() || driverToElaborate->isClocked()) && definedPaths.count(path) == 0)
 	{
 		std::string drivenName = drivenSignal->generateUniqueIdentifier();
 		std::string driverName = driverToElaborate->generateUniqueIdentifier();
@@ -141,7 +141,7 @@ void CDotGraphCreator::createDriverDefinitionsRecursive(int depth, const CSignal
 
 	if(!_userDefinedSignalsOnly && depth > 0)
 	{
-		return;
+		//return;
 	}
 
 	if(depth == 0 || !driverToElaborate->isClocked())

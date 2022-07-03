@@ -72,13 +72,12 @@ begin
       din_q_rrr <= din_q_rr;
       din_i_sq_rrr <= din_i_sq_rr;
       din_q_sq_rrr <= signed(din_q_rr) * signed(din_q_rr);
-
-    end if;
-    if reset = '1' then
-      din_i_rrr    <= (others => '0');
-      din_q_rrr    <= (others => '0');
-      din_i_sq_rrr <= (others => '0');
-      din_q_sq_rrr <= (others => '0');
+      if reset = '1' then
+        din_i_rrr    <= (others => '0');
+        din_q_rrr    <= (others => '0');
+        din_i_sq_rrr <= (others => '0');
+        din_q_sq_rrr <= (others => '0');
+      end if;
     end if;
   end process;
 

@@ -1,10 +1,3 @@
---
--- Dual-Port Block RAM with Two Write Ports
--- Correct Modelization with a Shared Variable
---
--- Download: ftp://ftp.xilinx.com/pub/documentation/misc/xstug_examples.zip
--- File: HDL_Coding_Techniques/rams/rams_16b.vhd
---
 library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_unsigned.all;
@@ -20,8 +13,6 @@ entity async_dpram is
   (
     clka  : in  std_logic;
     clkb  : in  std_logic;
-    ena   : in  std_logic := '1';
-    enb   : in  std_logic := '1';
     wea   : in  std_logic;
     web   : in  std_logic;
     addra : in  std_logic_vector(ADDR_BITS-1 downto 0);
@@ -39,29 +30,30 @@ architecture rtl of async_dpram is
 
   signal ram_out_a : std_logic_vector(DATA_BITS-1 downto 0);
   signal ram_out_b : std_logic_vector(DATA_BITS-1 downto 0);
+
+  signal addra_r : std_logic_vector(ADDR_BITS-1 downto 0);
+  signal addrb_r : std_logic_vector(ADDR_BITS-1 downto 0);
 begin
 
   process (CLKA) begin
     if rising_edge(CLKA) then
-      if ENA = '1' then
-        ram_out_a <= RAM(conv_integer(ADDRA));
-        if WEA = '1' then
-          RAM(conv_integer(ADDRA)) := DIA;
-        end if;
+      addra_r <= addra;
+      if WEA = '1' then
+        RAM(conv_integer(ADDRA)) := DIA;
       end if;
     end if;
   end process;
+  ram_out_a <= RAM(conv_integer(addra_r));
 
   process (CLKB) begin
     if rising_edge(CLKB) then
-      if ENB = '1' then
-        ram_out_b <= RAM(conv_integer(ADDRB));
-        if WEB = '1' then
-          RAM(conv_integer(ADDRB)) := DIB;
-        end if;
+      addrb_r <= addrb;
+      if WEB = '1' then
+        RAM(conv_integer(ADDRB)) := DIB;
       end if;
     end if;
   end process;
+  ram_out_b <= RAM(conv_integer(addrb_r));
 
   gen_output_reg : if OUTPUT_REG generate
     process (CLKA) begin

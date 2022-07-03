@@ -189,12 +189,16 @@ begin
     end if;
   end process;
 
-  dout.i        <= ram_out_i_rr;
-  dout.q        <= ram_out_q_rr;
-  dout_sq_power <= ram_out_pow_rr;
-  dout.valid    <= ram_out_valid_rr;
-  dout.pps      <= ram_out_pps_rr;
-  dout_frame    <= edge_detected;
+  process (clk) begin
+    if rising_edge(clk) then
+      dout.i        <= ram_out_i_rr;
+      dout.q        <= ram_out_q_rr;
+      dout_sq_power <= ram_out_pow_rr;
+      dout.valid    <= ram_out_valid_rr;
+      dout.pps      <= ram_out_pps_rr;
+      dout_frame    <= edge_detected;
+    end if;
+  end process;
 
   process (clk) begin
     if rising_edge(clk) then
