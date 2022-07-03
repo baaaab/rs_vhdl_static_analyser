@@ -47,6 +47,7 @@ architecture rtl_bob of test_comp is
 
   signal ram_rd_valid     : std_logic;
   signal ram_rd_valid_r   : std_logic;
+  signal ram_rd_valid_rr  : std_logic;
 
   signal ram_out_i        : std_logic_vector(7 downto 0);
   signal ram_out_q        : std_logic_vector(7 downto 0);
@@ -155,6 +156,7 @@ begin
 
       ram_rd_valid    <= abs_valid;
       ram_rd_valid_r  <= ram_rd_valid;
+      ram_rd_valid_rr <= ram_rd_valid_r;
     end if;
   end process;
 
@@ -168,7 +170,7 @@ begin
       ram_out_i_r      <= ram_out_i;
       ram_out_q_r      <= ram_out_q;
       ram_out_pow_r    <= ram_out_pow;
-      ram_out_valid_r  <= ram_rd_valid_r;
+      ram_out_valid_r  <= ram_rd_valid_rr;
       ram_out_pps_r    <= ram_out_pps;
       power_difference <= signed('0' & abs_pow_delayed) - signed('0' & ram_out_pow);
     end if;

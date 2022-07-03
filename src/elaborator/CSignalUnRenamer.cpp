@@ -88,7 +88,8 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 					if(signalToReplace && unRenamed)
 					{
 						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "if (!isClocked && contributors.size() == 1) Signal: '%s' looks like a rename of: '%s', checking assignments: '%s' vs '%s' ",
-								signalToReplace->getName().c_str(), unRenamed->getName().c_str(),
+								signalToReplace->getName().c_str(),
+								unRenamed->getName().c_str(),
 								assignmentRhsString.c_str(),
 								signalName.c_str()
 								);
@@ -98,21 +99,23 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 
 							for (CSignal* otherSignal : signals)
 							{
-								if (otherSignal != signalToReplace)
+								if (otherSignal != signalToReplace && otherSignal != unRenamed)
 								{
 									if(!otherSignal->getAssignmentStatementRhs().empty())
 									{
 										std::string rhs = otherSignal->getAssignmentStatementRhs();
 										std::string findStr = signalToReplace->getName();
 										std::string replaceStr = unRenamed->getName();
-										/*printf("Signal: %s, replacing %s with %s in %s\n",
-												otherSignal->getName().c_str(),
-												findStr.c_str(),
-												replaceStr.c_str(),
-												rhs.c_str());*/
 
-										RhsAssignmentStdStringReplace(rhs, findStr, replaceStr);
-										otherSignal->setAssignmentStatementRhs(rhs.c_str());
+										if(RhsAssignmentStdStringReplace(rhs, findStr, replaceStr))
+										{
+											/*printf("Signal: %s, replacing %s with %s in %s\n",
+																							otherSignal->getName().c_str(),
+																							findStr.c_str(),
+																							replaceStr.c_str(),
+																							rhs.c_str());*/
+											otherSignal->setAssignmentStatementRhs(rhs.c_str());
+										}
 									}
 
 									//replace references to signal with unRenamed in contributors or clock
@@ -133,6 +136,23 @@ void CSignalUnRenamer::simplifyEntityArchitecture(std::vector<CSignal*>& signals
 										ReplaceElementInVector(combinatorialContributors, signalToReplace, unRenamed);
 										otherSignal->setCombinatorialContributors(combinatorialContributors);
 									}
+								}
+							}
+
+							// replace assignments and contributors of unrenamed with those of signalToReplace
+							{
+								unRenamed->setAssignmentStatementRhs(signalToReplace->getAssignmentStatementRhs().c_str());
+								std::vector<CSignal*> contributors = signalToReplace->getContributors();
+								// remove new destination signal from the list of contributors
+								contributors.erase(std::remove(contributors.begin(), contributors.end(), unRenamed), contributors.end());
+
+								if(signalToReplace->getClock())
+								{
+									unRenamed->setClockedContributors(signalToReplace->getClock(), contributors);
+								}
+								else
+								{
+									unRenamed->setCombinatorialContributors(contributors);
 								}
 							}
 
