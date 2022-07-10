@@ -339,6 +339,13 @@ void CParser::parseArchitecture(std::vector<std::string>::iterator& itr)
 			line++;
 		}
 
+		if(line[0] == '-' && line[1] == '-')
+		{
+			// a comment, we don't really expect this, but it can happen after processes sometimes
+			++itr;
+			continue;
+		}
+
 		char* state = NULL;
 		char* firstWord = strtok_r(line, " ", &state);
 
