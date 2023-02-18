@@ -311,6 +311,8 @@ void CEntity::simplify()
 	// unrenamer breaks RHS assignment strings that unconcatenatore needs.
 	CSignalUnRenamer unrenamer;
 	unrenamer.simplifyEntityArchitecture(_signals, _entityInstances);
+
+	unconcatenator.simplifyEntityArchitecture(_signals, _entityInstances);
 }
 
 } /* namespace vhdl */

@@ -18,6 +18,8 @@ public:
 	const std::vector<CSignal*>& getContributors() const;
 	void setClockedContributors(CSignal* clockSignal, const std::vector<CSignal*>& clockedContributors);
 	void setCombinatorialContributors(const std::vector<CSignal*>& combinatorialContributors);
+	void addClockedContributors(CSignal* clockSignal, const std::vector<CSignal*>& clockedContributors);
+	void addCombinatorialContributors(const std::vector<CSignal*>& combinatorialContributors);
 
 	bool isInput() const;
 	void setIsInput(bool isInput);

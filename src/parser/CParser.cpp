@@ -526,6 +526,7 @@ CSignal* CParser::parseAssignment(std::vector<std::string>::iterator& itr, CEnti
 	// n3_o <= n147_o (15 downto 8);
 	// dout.valid <= wrap_dout_valid;
 	// n177_o <= std_logic_vector (resize (signed (din_q_rr), 16));  --  sext
+	// ram (to_integer (unsigned (addrb))) := dib;
 
 	char* copy = strdup(itr->c_str());
 	char* line = copy;
@@ -633,11 +634,11 @@ CSignal* CParser::parseAssignment(std::vector<std::string>::iterator& itr, CEnti
 
 	if(clockSignal)
 	{
-		signal->setClockedContributors(clockSignal, contributors);
+		signal->addClockedContributors(clockSignal, contributors);
 	}
 	else
 	{
-		signal->setCombinatorialContributors(contributors);
+		signal->addCombinatorialContributors(contributors);
 	}
 	signal->setAssignmentStatementRhs(rhs);
 

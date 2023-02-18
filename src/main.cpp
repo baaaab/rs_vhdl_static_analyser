@@ -1,5 +1,8 @@
+#include <getopt.h>
 #include <cstdio>
 #include <cstdlib>
+#include <string>
+#include <vector>
 
 #include "dot/CDotGraphCreator.h"
 #include "elaborator/CElaborator.h"
@@ -7,28 +10,51 @@
 
 void usage(const char* argv0)
 {
-	fprintf(stderr, "Usage: %s synth.vhd\n", argv0);
+	fprintf(stderr, "Usage: %s options\n", argv0);
+	fprintf(stderr, "Options: \n");
+	fprintf(stderr, "\t--vhdl          -v         VHDL file (GHDL synth output)\n");
+	fprintf(stderr, "\t--ignore        -i         Signal name to ignore (can be set many times)\n");
 	exit(1);
 }
 
 int main(int argc, char** argv)
 {
-	if (argc < 2)
+	static struct option long_options[] =
 	{
-		usage(argv[0]);
+		{ "vhdl",   required_argument, NULL, 'v' },
+		{ "i",      required_argument, NULL, 'i' },
+		{ NULL, 0, NULL, 0 }
+	};
+
+	int ch;
+
+	const char* inputVhdlFileName = NULL;
+	std::vector<std::string> signalNamesToIgnore({ "reset", "sreset" });
+
+	while ((ch = getopt_long(argc, argv, "v:i:", long_options, NULL)) != -1)
+	{
+		switch (ch)
+		{
+			case 'v':
+				inputVhdlFileName = optarg;
+				break;
+			case 'i':
+				signalNamesToIgnore.push_back(optarg);
+				break;
+			default:
+				usage(argv[0]);
+		}
 	}
 
 	vhdl::CParser parser;
 
-	parser.parse(argv[1]);
+	parser.parse(inputVhdlFileName);
 
 	vhdl::CElaborator elaborator(&parser);
 	//elaborator.printUnassignedSignals();
 
 	elaborator.elaborateSignalsFromPath("");
 	//elaborator.printNetlist();
-
-	std::vector<std::string> signalNamesToIgnore({"reset", "sreset"});
 
 	vhdl::CDotGraphCreator graphCreator("bob.dot", signalNamesToIgnore);
 	graphCreator.setUserDefinedSignalsOnly(true);

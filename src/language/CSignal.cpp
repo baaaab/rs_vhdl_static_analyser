@@ -1,6 +1,7 @@
 #include "CSignal.h"
 
 #include <cstdio>
+#include <algorithm>
 
 #include "../output/CLogger.h"
 #include "../output/ELogLevel.h"
@@ -42,6 +43,31 @@ void CSignal::setClockedContributors(CSignal* clockSignal, const std::vector<CSi
 void CSignal::setCombinatorialContributors(const std::vector<CSignal*>& combinatorialContributors)
 {
 	_contributors = combinatorialContributors;
+	_clock = NULL;
+}
+
+void CSignal::addClockedContributors(CSignal* clockSignal, const std::vector<CSignal*>& clockedContributors)
+{
+	// maybe this should be a set...
+	for(CSignal* signal : clockedContributors)
+	{
+		if(std::find(_contributors.begin(), _contributors.end(), signal) == _contributors.end())
+		{
+			_contributors.push_back(signal);
+		}
+	}
+	_clock = clockSignal;
+}
+
+void CSignal::addCombinatorialContributors(const std::vector<CSignal*>& combinatorialContributors)
+{
+	for(CSignal* signal : combinatorialContributors)
+	{
+		if(std::find(_contributors.begin(), _contributors.end(), signal) == _contributors.end())
+		{
+			_contributors.push_back(signal);
+		}
+	}
 	_clock = NULL;
 }
 
