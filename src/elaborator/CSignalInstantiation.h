@@ -33,10 +33,10 @@ public:
 
 	bool isClocked() const;
 
-	std::set<int> calculateNumberofRegisterStages() const;
+	std::set<int> calculateNumberofRegisterStages(const std::vector<std::string>& signalsToIgnore) const;
 
 	static std::set<int> CountNumberOfRegisterStagesToInput(const CSignalInstantiation* signal, const CSignalInstantiation* clock,
-	    std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>>& followedPaths);
+	    std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>>& followedPaths, const std::vector<std::string>& signalsToIgnore);
 
 private:
 	std::vector<CEntitySignalPair> _definitions;

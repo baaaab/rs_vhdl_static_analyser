@@ -88,7 +88,19 @@ begin
 
   dout_data  <= carry_chain(NUM_TAPS)(din_data'length + new_coeff'length + 4-1 downto new_coeff'length + 4);
   dout_valid <= din_valid;
-  dout_frame <= din_frame; -- cba doing this properly
+
+  delay_frame : entity work.delay_bit
+  generic map
+  (
+    DELAY => NUM_TAPS + 3
+  )
+  port map
+  (
+    clk => clk,
+    clken => din_valid,
+    d => din_frame,
+    q => dout_frame
+  );
 
   process (clk) begin
     if rising_edge(clk) then

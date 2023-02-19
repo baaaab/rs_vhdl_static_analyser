@@ -100,7 +100,7 @@ bool CSignalInstantiation::isClocked() const
 	return false;
 }
 
-std::set<int> CSignalInstantiation::calculateNumberofRegisterStages() const
+std::set<int> CSignalInstantiation::calculateNumberofRegisterStages(const std::vector<std::string>& signalsToIgnore) const
 {
 	std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>> followedPaths;
 	std::set<const CSignalInstantiation*> clockCheckList;
@@ -109,13 +109,13 @@ std::set<int> CSignalInstantiation::calculateNumberofRegisterStages() const
 	const CSignalInstantiation* clock = GetDriverClockRecursive(this, clockCheckList);
 
 	// loop through all non-self drivers, add one for each clocked, do not follow the same path twice
-	std::set<int> allPathLengths = CountNumberOfRegisterStagesToInput(this, clock, followedPaths);
+	std::set<int> allPathLengths = CountNumberOfRegisterStagesToInput(this, clock, followedPaths, signalsToIgnore);
 
 	return allPathLengths;
 }
 
 std::set<int> CSignalInstantiation::CountNumberOfRegisterStagesToInput(const CSignalInstantiation* signal, const CSignalInstantiation* clock,
-    std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>>& followedPaths)
+    std::set<std::pair<const CSignalInstantiation*, const CSignalInstantiation*>>& followedPaths, const std::vector<std::string>& signalsToIgnore)
 {
 	int numRegisterStages = 0;
 	if(signal->isClocked())
@@ -142,9 +142,13 @@ std::set<int> CSignalInstantiation::CountNumberOfRegisterStagesToInput(const CSi
 		bool ignoreDriver = false;
 		for(const CEntitySignalPair& esp : driver->getDefinitions())
 		{
-			if(esp.getSignal()->getName() == "reset" || esp.getSignal()->getName() == "sreset")
+			for(const std::string& signalToIgnore : signalsToIgnore)
 			{
-				ignoreDriver = true;
+				if(signalToIgnore == esp.getSignal()->getName())
+				{
+					ignoreDriver = true;
+					break;
+				}
 			}
 		}
 		if(!ignoreDriver)
@@ -153,7 +157,7 @@ std::set<int> CSignalInstantiation::CountNumberOfRegisterStagesToInput(const CSi
 			if(followedPaths.count(path) == 0)
 			{
 				followedPaths.insert(path);
-				std::set<int> derivativePathLength = CountNumberOfRegisterStagesToInput(driver, clock, followedPaths);
+				std::set<int> derivativePathLength = CountNumberOfRegisterStagesToInput(driver, clock, followedPaths, signalsToIgnore);
 				pathLengths.insert(derivativePathLength.begin(), derivativePathLength.end());
 			}
 		}

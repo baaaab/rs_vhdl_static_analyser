@@ -74,7 +74,7 @@ void CDotGraphCreator::createDriverDefinitionsRecursive(int depth, const CSignal
 	// only need to go over it once
 	recursedNodes.insert(driverToElaborate);
 
-	std::set<int> allRanks = drivenSignal->calculateNumberofRegisterStages();
+	std::set<int> allRanks = drivenSignal->calculateNumberofRegisterStages(_signalNamesToIgnore);
 	if(allRanks.empty())
 	{
 		allRanks.insert(0);
