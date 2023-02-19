@@ -19,7 +19,6 @@ end entity fir_stage;
 architecture rtl of fir_stage is
 
   signal din_data_r  : signed(din_data'range);
-  signal din_coeff_r : signed(din_coeff'range);
 
   signal mult        : signed(din_data'length + din_coeff'length - 1 downto 0);
 
@@ -29,7 +28,6 @@ begin
     if rising_edge(clk) then
       if din_valid = '1' then
         din_data_r <= signed(din_data);
-        din_coeff_r <= signed(din_coeff);
       end if;
     end if;
   end process;
@@ -37,7 +35,7 @@ begin
   process (clk) begin
     if rising_edge(clk) then
       if din_valid = '1' then
-        mult <= din_data_r * din_coeff_r;
+        mult <= din_data_r * signed(din_coeff);
       end if;
     end if;
   end process;

@@ -31,9 +31,9 @@ architecture rtl_bob of fir_comp is
   constant DATA_BITS : natural := din_data'length;
   constant NUM_TAPS  : natural := 16;
 
-  type data_delay_t is array (0 to NUM_TAPS-1) of std_logic_vector(DATA_BITS-1 downto 0);
-  type coeff_t is array (0 to NUM_TAPS-1) of std_logic_vector(DATA_BITS-1 downto 0);
-  type carry_t is array (0 to NUM_TAPS) of std_logic_vector(47 downto 0);
+  type data_delay_t is array (NUM_TAPS-1 downto 0) of std_logic_vector(DATA_BITS-1 downto 0);
+  type coeff_t is array (NUM_TAPS-1 downto 0) of std_logic_vector(DATA_BITS-1 downto 0);
+  type carry_t is array (NUM_TAPS downto 0) of std_logic_vector(47 downto 0);
 
   signal delayed_data : data_delay_t;
   signal carry_chain  : carry_t;

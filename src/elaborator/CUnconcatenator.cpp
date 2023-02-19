@@ -91,9 +91,12 @@ void CUnconcatenator::simplifyEntityArchitecture(std::vector<CSignal*>& signals,
 	 *
 	 * We want to represent this as 4 register stages.
 	 * This is basically intended for use with delab_bit and delay_vector
+	 * New: Also for resolving other arrays too.
 	 *
 	 * This code will only work when using the syntax in the example above!
 	 * It could be written better
+	 *
+	 * It also assumes all arrays are defined using (x downto 0) syntax, using `to` will lead to reversed indexes
 	 */
 
 	for (std::vector<CSignal*>::iterator itr = signals.begin(); itr != signals.end();)
@@ -101,9 +104,15 @@ void CUnconcatenator::simplifyEntityArchitecture(std::vector<CSignal*>& signals,
 		bool vectorModified = false;
 		CSignal* signal = *itr;
 
+		CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+											    "Considering Signal '%s'", signal->getName().c_str());
+
 		const std::string& rhsAssignmentString = signal->getAssignmentStatementRhs();
 		if (signal->getClock() == NULL && !rhsAssignmentString.empty())
 		{
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+												    "\t unclocked and RHS assignment detected");
+
 			// see if the RHS is a list of signals separated by ' & '
 			std::vector<char*> componentSignalNames;
 
@@ -121,32 +130,53 @@ void CUnconcatenator::simplifyEntityArchitecture(std::vector<CSignal*>& signals,
 				componentSignalNames.push_back(signalName);
 			}
 
+			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+												    "\t componentSignalNames.size() = %zu", componentSignalNames.size());
+
 			if (componentSignalNames.size() > 1)
 			{
+
 				std::set<std::string> componentSignalTypes;
-				bool allComponentSignalsLocated = true;
+				bool allComponentSignalsLocatedOrConstant = true;
 				for (const char* signalName : componentSignalNames)
 				{
-					bool signalFound = false;
-					for (const CSignal* otherSignal : signals)
+					bool signalFound = isConstant(signalName);
+					if(!signalFound)
 					{
-						if (otherSignal->getName() == signalName)
+						for (const CSignal* otherSignal : signals)
 						{
-							signalFound = true;
-							componentSignalTypes.insert(otherSignal->getType());
-							break;
+							if (otherSignal->getName() == signalName)
+							{
+								signalFound = true;
+								componentSignalTypes.insert(otherSignal->getType());
+								break;
+							}
 						}
 					}
 					if (!signalFound)
 					{
-						allComponentSignalsLocated = false;
+						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+					    "\t Missing signal : '%s'", signalName);
+						allComponentSignalsLocatedOrConstant = false;
 						break;
 					}
 				}
 
-				// make sure all components are signals, and they all have the same type
-				if (allComponentSignalsLocated && componentSignalTypes.size() == 1)
+				CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+									    "\t allComponentSignalsLocated = %d, componentSignalTypes.size() = %zu", allComponentSignalsLocatedOrConstant, componentSignalTypes.size());
+
+				for(auto& type : componentSignalTypes)
 				{
+					CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+																			    "\t\t%s", type.c_str());
+				}
+
+				// make sure all components are signals, and they all have the same type
+				if (allComponentSignalsLocatedOrConstant && componentSignalTypes.size() == 1)
+				{
+					CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+														    "\tallComponentSignalsLocatedOrConstant && componentSignalTypes.size() == 1");
+
 					const char* stdLogicVectorLoc = strstr(signal->getType().c_str(), "std_logic_vector ");
 					if (stdLogicVectorLoc == signal->getType().c_str())
 					{
@@ -166,10 +196,13 @@ void CUnconcatenator::simplifyEntityArchitecture(std::vector<CSignal*>& signals,
 
 						if (!signalsThatWillNeedReplacing.empty())
 						{
+							CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+																    "\t !signalsThatWillNeedReplacing.empty()");
+
 							// we expect only one clocked assignment and we expect a circular dependency
 							int numClockedAssignments = 0;
 							CSignal* clockedAssignmentSignal = NULL;
-							CSignal* slicedSignal = NULL;
+							CSignal* slicedSignal = signal;
 							for (CSignal* s : signalsThatWillNeedReplacing)
 							{
 								if (s->getClock())
@@ -184,32 +217,84 @@ void CUnconcatenator::simplifyEntityArchitecture(std::vector<CSignal*>& signals,
 								}
 							}
 
-							if (numClockedAssignments == 1 && slicedSignal)
+							CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+																    "\tnumClockedAssignments = %u, slicedSignal = %p", numClockedAssignments, slicedSignal);
+
+							if(slicedSignal)
 							{
-								// go through clockedAssignmentSignal's transitive dependencies to see whether clockedAssignmentSignal appears in the list
-								std::vector<const CSignal*> checkedSignals;
-								if (doesSignalIndirectlyDependUponItsSelf(clockedAssignmentSignal, clockedAssignmentSignal, checkedSignals))
+								if (numClockedAssignments == 1)
 								{
-									CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
-									    "Signal %s of type %s assigned with '%s' is a candidate for unconcatenation", signal->getName().c_str(),
-									    signal->getType().c_str(), signal->getAssignmentStatementRhs().c_str());
-
-									std::string otherRelatedSignalsSerialised;
-
-									for (CSignal* s : signalsThatWillNeedReplacing)
+									// go through clockedAssignmentSignal's transitive dependencies to see whether clockedAssignmentSignal appears in the list
+									std::vector<const CSignal*> checkedSignals;
+									if (doesSignalIndirectlyDependUponItsSelf(clockedAssignmentSignal, clockedAssignmentSignal, checkedSignals))
 									{
-										otherRelatedSignalsSerialised += (otherRelatedSignalsSerialised.empty() ? "" : ", ") + s->getName();
+										// this is a special case for delay_vector style signals, a more general case appears below
+										CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+												"Signal %s of type %s assigned with '%s' is a candidate for unconcatenation (looks like a delay)", signal->getName().c_str(),
+												signal->getType().c_str(), signal->getAssignmentStatementRhs().c_str());
+
+										std::string otherRelatedSignalsSerialised;
+
+										for (CSignal* s : signalsThatWillNeedReplacing)
+										{
+											otherRelatedSignalsSerialised += (otherRelatedSignalsSerialised.empty() ? "" : ", ") + s->getName();
+										}
+
+										CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO, "Related signals are: %s",
+												otherRelatedSignalsSerialised.c_str());
+
+										try
+										{
+											replaceSignalsWithUnconcatenatedEquivalents(signal, slicedSignal, signalsThatWillNeedReplacing,
+													*componentSignalTypes.begin(), signals, entityInstances);
+
+											// itr is invalidated, for simplicity just start from the beginning again
+											itr = signals.begin();
+											vectorModified = true;
+										}
+										catch(...)
+										{
+
+										}
 									}
+								}
+								else if(numClockedAssignments == 0 && signal == slicedSignal) // this may depend on the unrenamer having run already
+								{
+									uint32_t sliceRangeUpper = 0;
+									uint32_t sliceRangeLower = 0;
+									ExtractSliceRangeFromType(componentSignalTypes.begin()->c_str(), sliceRangeUpper, sliceRangeLower);
+									uint32_t typeSize = sliceRangeUpper + 1;
 
-									CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO, "Related signals are: %s",
-									    otherRelatedSignalsSerialised.c_str());
+									if(isSignalOnlyReferencedInASlicedManner(slicedSignal, signals, typeSize))
+									{
+										CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO,
+												"Signal %s of type %s assigned with '%s' is a candidate for unconcatenation (looks like an array)", signal->getName().c_str(),
+												signal->getType().c_str(), signal->getAssignmentStatementRhs().c_str());
 
-									replaceSignalsWithUnconcatenatedEquivalents(signal, slicedSignal, signalsThatWillNeedReplacing,
-									    *componentSignalTypes.begin(), signals, entityInstances);
+										std::string otherRelatedSignalsSerialised;
 
-									// itr is invalidated, for simplicity just start from the beginning again
-									itr = signals.begin();
-									vectorModified = true;
+										for (CSignal* s : signalsThatWillNeedReplacing)
+										{
+											otherRelatedSignalsSerialised += (otherRelatedSignalsSerialised.empty() ? "" : ", ") + s->getName();
+										}
+
+										CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO, "Related signals are: %s",
+												otherRelatedSignalsSerialised.c_str());
+
+										try
+										{
+											replaceSignalsWithUnconcatenatedEquivalents(signal, slicedSignal, signalsThatWillNeedReplacing,
+													*componentSignalTypes.begin(), signals, entityInstances);
+
+											// itr is invalidated, for simplicity just start from the beginning again
+											itr = signals.begin();
+											vectorModified = true;
+										}
+										catch(...)
+										{
+
+										}
+									}
 								}
 							}
 						}
@@ -294,16 +379,61 @@ bool CUnconcatenator::doesSignalIndirectlyDependUponItsSelf(const CSignal* signa
 		{
 			return true;
 		}
-		else if (std::find(checkedDependencies.begin(), checkedDependencies.end(), nextSignal) == checkedDependencies.end())
+		else
 		{
-			if (doesSignalIndirectlyDependUponItsSelf(signalOfInterest, nextSignal, checkedDependencies))
+			if (std::find(checkedDependencies.begin(), checkedDependencies.end(), nextSignal) == checkedDependencies.end())
 			{
-				return true;
+				if (doesSignalIndirectlyDependUponItsSelf(signalOfInterest, nextSignal, checkedDependencies))
+				{
+					return true;
+				}
+			}
+	}
+	}
+	return false;
+}
+
+bool CUnconcatenator::isSignalOnlyReferencedInASlicedManner(const CSignal* signalOfInterest, std::vector<CSignal*>& allSignals, uint32_t elementSize) const
+{
+	CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO, "signalOfInterest: %s",
+						signalOfInterest->getName().c_str());
+	for(const CSignal* otherSignal : allSignals)
+	{
+		if(otherSignal != signalOfInterest)
+		{
+			const std::string& rhsAssignment = otherSignal->getAssignmentStatementRhs();
+			for(const CSignal* contributor : otherSignal->getContributors())
+			{
+				if(contributor == signalOfInterest)
+				{
+					if(rhsAssignment.empty())
+					{
+						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO, "otherSignal: %s empty assignment",
+								otherSignal->getName().c_str());
+						return false;
+					}
+
+					uint32_t upper = 0;
+					uint32_t lower = 0;
+					if(ExtractSliceRangeFromAssignment(rhsAssignment.c_str(), signalOfInterest, upper, lower))
+					{
+						if(upper / elementSize == lower/elementSize)
+						{
+							break;
+						}
+					}
+					else
+					{
+						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::INFO, "otherSignal: %s with RHS = '%s' sketchy slicing: %u downto %u != %u",
+								otherSignal->getName().c_str(), rhsAssignment, upper, lower, elementSize);
+						return false;
+					}
+				}
 			}
 		}
 	}
 
-	return false;
+	return true;
 }
 
 void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* concatenatedSignal, CSignal* slicedSignal,
@@ -313,33 +443,17 @@ void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* conca
 	// concatenatedSignal is the one that does the concatenation, its dependencies need handling differently
 	// all the other entries in signalsThatWillNeedReplacing need to be replaced with sliced versions
 
-	int numberOfComponents = concatenatedSignal->getContributors().size();
-	int typeSize = 1;
-	char* copy = strdup(replacementType.c_str());
-	const char* searchTerm = "std_logic_vector ";
-	char* stdLogicVectorPos = strstr(copy, searchTerm);
-	if (stdLogicVectorPos)
-	{
-		stdLogicVectorPos += strlen(searchTerm);
-		while (*stdLogicVectorPos)
-		{
-			if (*stdLogicVectorPos != '(')
-			{
-				stdLogicVectorPos++;
-			}
-			else
-			{
-				break;
-			}
-		}
-		stdLogicVectorPos++;
-		typeSize = strtoul(stdLogicVectorPos, NULL, 10) + 1;
-	}
-	else
-	{
-		// it was a std_logic
-	}
-	free(copy);
+	uint32_t sliceRangeUpper = 0;
+	uint32_t sliceRangeLower = 0;
+	ExtractSliceRangeFromType(replacementType.c_str(), sliceRangeUpper, sliceRangeLower);
+	uint32_t typeSize = sliceRangeUpper + 1;
+
+	uint32_t concatenatedTypeSliceRangeUpper = 0;
+	uint32_t concatenatedTypeSliceRangeLower = 0;
+	ExtractSliceRangeFromType(concatenatedSignal->getType().c_str(), concatenatedTypeSliceRangeUpper, concatenatedTypeSliceRangeLower);
+	uint32_t concatenatedTypeSize = concatenatedTypeSliceRangeUpper+1;
+
+	uint32_t numberOfComponents = concatenatedTypeSize / typeSize;
 
 	printf("Replacing: %s of type %s with %d %s signals each of size %d\n", concatenatedSignal->getName().c_str(),
 	    concatenatedSignal->getType().c_str(), numberOfComponents, replacementType.c_str(), typeSize);
@@ -356,7 +470,7 @@ void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* conca
 		}
 	}
 
-	// first pass, create new unconcatenated versions of thatt the signals that will need replacing
+	// first pass, create new unconcatenated versions of the signals that will need replacing
 	for (CSignal* signalToUnConcatenate : signalsThatWillNeedReplacing)
 	{
 		char* copy = strdup(signalToUnConcatenate->getAssignmentStatementRhs().c_str());
@@ -385,31 +499,38 @@ void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* conca
 			if (signalToUnConcatenate == concatenatedSignal)
 			{
 				// special case for the concatenated signal, each slice gets its own contributor
-				char* part = strtok_r((i == (numberOfComponents - 1)) ? copy : NULL, " &", &state);
+				char* part = strtok_r(((uint32_t)i == (numberOfComponents - 1)) ? copy : NULL, " &", &state);
 				if (!part)
 				{
 					CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL,
 					    "Cannot unconcatente signal: cannot resolve the contributors for signal: %s", signalToUnConcatenate->getName().c_str());
-					throw 1;
+					throw 1; // this will cause leaks
 				}
 				// find the corresponding signal in the previous contributors array
 				bool found = false;
-				for (CSignal* contributor : signalToUnConcatenate->getContributors())
+				if(isConstant(part))
 				{
-					if (contributor->getName() == part)
+					found = true;
+				}
+				else
+				{
+					for (CSignal* contributor : signalToUnConcatenate->getContributors())
 					{
-						found = true;
-						std::vector<CSignal*> contributors;
-						contributors.push_back(contributor);
-						if (signalToUnConcatenate->getClock())
+						if (contributor->getName() == part)
 						{
-							component->setClockedContributors(signalToUnConcatenate->getClock(), contributors);
+							found = true;
+							std::vector<CSignal*> contributors;
+							contributors.push_back(contributor);
+							if (signalToUnConcatenate->getClock())
+							{
+								component->setClockedContributors(signalToUnConcatenate->getClock(), contributors);
+							}
+							else
+							{
+								component->setCombinatorialContributors(contributors);
+							}
+							break;
 						}
-						else
-						{
-							component->setCombinatorialContributors(contributors);
-						}
-						break;
 					}
 				}
 				if (!found)
@@ -439,6 +560,8 @@ void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* conca
 
 		free(copy);
 	}
+
+	// TODO: at some port we should be replacing signals on the port map in entitySignals
 
 	// seconds pass, go through all contributors and assignment string of all signals and update references to removed signals
 	// find other signals referencing the thing we have just unconcatenated and update their contributors
@@ -477,42 +600,46 @@ void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* conca
 				std::string replaceTerm;
 
 				// we need to figure out whether we were using a sliced version, or the whole version
-				std::string sliceRange;
-				if (GetSliceRange(otherSignal->getAssignmentStatementRhs().c_str(), contributorSignal, sliceRange))
+				uint32_t sliceRangeUpper = 0;
+				uint32_t sliceRangeLower = 0;
+				if (ExtractSliceRangeFromAssignment(otherSignal->getAssignmentStatementRhs().c_str(), contributorSignal, sliceRangeUpper, sliceRangeLower))
 				{
 					CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG,
-					    "contributorSignal: %s, otherSignal: %s, Assignment str: '%s', sliceRange: %s", contributorSignal->getName().c_str(),
-					    otherSignal->getName().c_str(), otherSignal->getAssignmentStatementRhs().c_str(), sliceRange.c_str());
+					    "contributorSignal: %s, otherSignal: %s, Assignment str: '%s', sliceRange: %u downto %u", contributorSignal->getName().c_str(),
+					    otherSignal->getName().c_str(), otherSignal->getAssignmentStatementRhs().c_str(), sliceRangeUpper, sliceRangeLower);
 
 					// only add the relevant component as a contributor
-					char* next = NULL;
-					int sliceRangeUpper = strtol(sliceRange.c_str(), &next, 10);
-					int sliceRangeLower = 0;
-					if (next && *next == ' ')
-					{
-						while (*next)
-						{
-							if (*next >= '0' && *next <= '9')
-							{
-								break;
-							}
-							next++;
-						}
-						sliceRangeLower = strtol(next, NULL, 10);
-					}
-					else
-					{
-						sliceRangeLower = sliceRangeUpper;
-					}
 					if ((sliceRangeUpper - sliceRangeLower) + 1 != typeSize || sliceRangeLower % typeSize != 0
 					    || sliceRangeLower / typeSize >= numberOfComponents)
 					{
-						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL,
-						    "Cannot unconcatente signal: %s, other signal %s slices it using range (%s) aka[%d -> %d] which does not align with our predetermined sub slice length: %d (%d, %d, %d)",
-						    contributorSignal->getName().c_str(), otherSignal->getName().c_str(), sliceRange.c_str(), sliceRangeUpper, sliceRangeLower,
-						    typeSize, (sliceRangeUpper - sliceRangeLower) + 1, sliceRangeLower % typeSize, sliceRangeLower / numberOfComponents);
-						// maybe this should not be fatal
-						throw 1;
+						if(sliceRangeUpper / typeSize == sliceRangeLower / typeSize)
+						{
+							// we are slicing one member of the array
+							int unconcatenationIndex = sliceRangeLower / typeSize;
+							CSignal* unconcatenatedContributorSignal = findUnconcatenatedContributorSignal(newSignals, contributorSignal,
+							    unconcatenationIndex);
+							if (!unconcatenatedContributorSignal)
+							{
+								CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL,
+								    "Cannot unconcatente signal: %s, contributor signal %s with unconcatenation index: %d, target signal not found",
+								    otherSignal->getName().c_str(), contributorSignal->getName().c_str(), unconcatenationIndex);
+								// maybe this should not be fatal
+								throw 1;
+							}
+							CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Adding to contributors: %s",
+									unconcatenatedContributorSignal->getName().c_str());
+							contributorsCopy.push_back(unconcatenatedContributorSignal);
+							replaceTerm = unconcatenatedContributorSignal->getName() + "(" + std::to_string(sliceRangeUpper - unconcatenationIndex * typeSize) + " downto " + std::to_string(sliceRangeLower - unconcatenationIndex * typeSize) + ")";
+						}
+						else
+						{
+							CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::FATAL,
+									"Cannot unconcatente signal: %s, other signal %s slices it using range (%u -> %u) which does not align with our predetermined sub slice length: %d (%d, %d, %d)",
+									contributorSignal->getName().c_str(), otherSignal->getName().c_str(), sliceRangeUpper, sliceRangeLower,
+									typeSize, (sliceRangeUpper - sliceRangeLower) + 1, sliceRangeLower % typeSize, sliceRangeLower / numberOfComponents);
+							// maybe this should not be fatal?
+							throw 1;
+						}
 					}
 					else
 					{
@@ -556,7 +683,7 @@ void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* conca
 					{
 						// insert all components (this might not be reachable based on prior checks)
 						CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "Adding all components to contributors");
-						for(int i=0;i<numberOfComponents;i++)
+						for(uint32_t i=0;i<numberOfComponents;i++)
 						{
 							CSignal* unconcatenatedContributorSignal = findUnconcatenatedContributorSignal(newSignals, contributorSignal, i);
 							contributorsCopy.push_back(unconcatenatedContributorSignal);
@@ -620,7 +747,7 @@ void CUnconcatenator::replaceSignalsWithUnconcatenatedEquivalents(CSignal* conca
 	entitySignals.insert(entitySignals.end(), newSignals.begin(), newSignals.end());
 }
 
-bool CUnconcatenator::GetSliceRange(const char* assignmentRhs, CSignal* signalOfInterest, std::string& sliceRange)
+bool CUnconcatenator::ExtractSliceRangeFromAssignment(const char* assignmentRhs, const CSignal* signalOfInterest, uint32_t& upper, uint32_t& lower)
 {
 	char* copy = strdup(assignmentRhs);
 
@@ -683,14 +810,71 @@ bool CUnconcatenator::GetSliceRange(const char* assignmentRhs, CSignal* signalOf
 				++pos;
 			}
 			CLogger::Log(__FILE__, __FUNCTION__, __LINE__, ELogLevel::DEBUG, "start = '%s', pos: '%s'", start, pos);
-			sliceRange = start;
+
+			bool success = ParseSliceRange(start, upper, lower);
+
 			free(copy);
-			return true;
+			return success;
 		}
 	}
 
 	free(copy);
 	return false;
+}
+
+bool CUnconcatenator::ExtractSliceRangeFromType(const char* type, uint32_t& upper, uint32_t& lower)
+{
+	char* copy = strdup(type);
+	const char* searchTerm = "std_logic_vector ";
+	char* stdLogicVectorPos = strstr(copy, searchTerm);
+	bool success = false;
+	if (stdLogicVectorPos)
+	{
+		stdLogicVectorPos += strlen(searchTerm);
+		while (*stdLogicVectorPos)
+		{
+			if (*stdLogicVectorPos != '(')
+			{
+				stdLogicVectorPos++;
+			}
+			else
+			{
+				break;
+			}
+		}
+		stdLogicVectorPos++;
+		success = ParseSliceRange(stdLogicVectorPos, upper, lower);
+	}
+	else
+	{
+		// it was a std_logic
+	}
+	free(copy);
+	return success;
+}
+
+bool CUnconcatenator::ParseSliceRange(const char* type, uint32_t& upper, uint32_t& lower)
+{
+	char* next = NULL;
+	upper = strtoul(type, &next, 10);
+	lower = 0;
+	if (next && *next == ' ')
+	{
+		while (*next)
+		{
+			if (*next >= '0' && *next <= '9')
+			{
+				break;
+			}
+			next++;
+		}
+		lower = strtol(next, NULL, 10);
+	}
+	else
+	{
+		lower = upper;
+	}
+	return true;
 }
 
 CSignal* CUnconcatenator::findUnconcatenatedContributorSignal(std::vector<CSignal*>& signals, CSignal* concatenatedSignal, int index)
@@ -706,6 +890,36 @@ CSignal* CUnconcatenator::findUnconcatenatedContributorSignal(std::vector<CSigna
 		}
 	}
 	return NULL;
+}
+
+bool CUnconcatenator::isConstant(const char* signal)
+{
+	// detects:
+	// "000000000000000000000000000000000000000000000000"
+	// "XXXXXXXXXXXXXXXX"
+
+	uint32_t length = strlen(signal);
+
+	if(signal[0] == '"' && signal[length-1] == '"')
+	{
+		bool allBitsValid = true;
+		for(uint32_t i =1; i<length-2;i++)
+		{
+			switch(signal[i])
+			{
+				case '0':
+				case '1':
+				case 'X':
+				case 'Z':
+					continue;
+				default:
+					allBitsValid = false;
+					break;
+			}
+		}
+		return allBitsValid;
+	}
+	return false;
 }
 
 } /* namespace vhdl */
